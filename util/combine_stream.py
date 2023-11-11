@@ -36,26 +36,45 @@ def find_anomaly_intervals(y):
     return anom_intervals
 
 
-def split_arff(filepath, index, trial_name):
+def split_arff(filepath, indices, trial_name, output_dir):
     #  Write new .arff files which splits original file from index
     #  File 1 contains points from index range [0, index)
     #  File 2 contains points from index range [index, file_length)
     #  @param filepath: String representing filepath of .arff file to split
-    #  @param index: int representing index of original data to split file
+    #  @param indices: list of int representing index of original data to split file
     #  @param trial_name: String representing identifying name of split
-    filename = filepath.split('.arff')[0]
+    #  @param output_dir: String representing directory to write arff file
+    #  @Return list of filepath
+    file = filepath.split('/')[-1]
+    if output_dir == None:
+        output_dir = filepath[:-len(file)]
+    filename = file.split('.arff')[0]
+
     content = []
+    output_files = []
+
     with open(filepath, 'r') as input_file:
         for line in input_file:
-            # if line != '\n':
             content.append(f"{line.strip()}\n")
+
     header_lines = content[:7]
-    data1 = content[7:index]
-    data2 = content[index:]
-    with open(f"{filename}_{trial_name}_1.arff", 'w') as output_file:
-        output_file.writelines(header_lines + data1)
-    with open(f"{filename}_{trial_name}_2.arff", 'w') as output_file:
-        output_file.writelines(header_lines + data2)
+    for i in range(len(indices)):
+        if i > 0:
+            data = content[indices[i-1]+7:indices[i]+7]
+        else:
+            data = content[7:indices[i]+7]
+        output_file_name = f"{output_dir}{filename}_{trial_name}_{i}.arff"
+        with open(output_file_name, 'w') as output_file:
+            output_file.writelines(header_lines + data)
+        output_files.append(output_file_name)
+        print(f"Generated file: {output_file_name}")
+    data = content[indices[-1]+7:]
+    output_file_name = f"{output_dir}{filename}_{trial_name}_{len(indices)}.arff"
+    with open(output_file_name, 'w') as output_file:
+        output_file.writelines(header_lines + data)
+    print(f"Generated file: {output_file_name}")
+    output_files.append(output_file_name)
+    return output_files
 
 
 def generate_moa_abrupt(
@@ -94,7 +113,7 @@ def generate_moa_gradual(
 
 
 def plot_anomaly(X, y, start=0, end=sys.maxsize, marker="-"):
-    # Plot the data with highlighted
+    # Plot the data with highlighted anomaly
     plt.figure(figsize=(12,2))
     plt.plot(np.arange(start,min(X.shape[0],end)), X[start:end], f"{marker}b")
     anomalous = np.multiply(np.reshape(y,(y.shape[0],1)),X)
