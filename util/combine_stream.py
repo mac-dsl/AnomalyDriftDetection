@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+# import plotly.express as px
 import arff
 import sys
 
@@ -18,6 +19,8 @@ def find_anomaly_intervals(y):
     # @param y: ndarray of shape (N,) corresponding to anomaly labels
     # @Return list of lists denoting anomaly intervals in the form [start, end)
     change_indices = np.where(np.diff(y) != 0)[0]
+    if len(change_indices) == 0:
+        return []
     anom_intervals = []
 
     if y[change_indices[0]] == 0:
@@ -116,6 +119,8 @@ def plot_anomaly(X, y, start=0, end=sys.maxsize, marker="-"):
     # Plot the data with highlighted anomaly
     plt.figure(figsize=(12,2))
     plt.plot(np.arange(start,min(X.shape[0],end)), X[start:end], f"{marker}b")
-    anomalous = np.multiply(np.reshape(y,(y.shape[0],1)),X)
-    anomalies = np.where(anomalous!=0, anomalous, None)
-    plt.plot(np.arange(start,min(X.shape[0],end)), anomalies[start:end], f"{marker}r")
+    for (anom_start, anom_end) in find_anomaly_intervals(y):
+        if start <= anom_end and anom_start <= anom_end:
+            anom_start = max(start, anom_start)
+            anom_end = min(end, anom_end)
+            plt.plot(np.arange(anom_start, anom_end), X[anom_start:anom_end], f"{marker}r")
