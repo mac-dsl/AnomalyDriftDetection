@@ -115,7 +115,7 @@ def generate_moa_gradual(
     return f'{command_p1} {command_p2}'
 
 
-def plot_anomaly(X, y, start=0, end=sys.maxsize, marker="-"):
+def plot_anomaly(X, y, start=0, end=sys.maxsize, title="", marker="-"):
     # Plot the data with highlighted anomaly
     plt.figure(figsize=(12,2))
     plt.plot(np.arange(start,min(X.shape[0],end)), X[start:end], f"{marker}b")
@@ -124,3 +124,5 @@ def plot_anomaly(X, y, start=0, end=sys.maxsize, marker="-"):
             anom_start = max(start, anom_start)
             anom_end = min(end, anom_end)
             plt.plot(np.arange(anom_start, anom_end), X[anom_start:anom_end], f"{marker}r")
+    if len(title) > 0:
+        plt.title(title)
