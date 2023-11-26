@@ -41,10 +41,11 @@ def find_anomaly_intervals(y):
 
 def split_arff(filepath, indices, trial_name, output_dir):
     #  Write new .arff files which splits original file from index
-    #  File 1 contains points from index range [0, index)
-    #  File 2 contains points from index range [index, file_length)
+    #    File 0 contains points from index range [0, index_1)
+    #    File n contains points from index range [index_{n-1}, index_n) for 0 < n < N
+    #    File N contains points from index range [index_N - 1, file_length)
     #  @param filepath: String representing filepath of .arff file to split
-    #  @param indices: list of int representing index of original data to split file
+    #  @param indices: list of int representing N-1 indices of original data to split file
     #  @param trial_name: String representing identifying name of split
     #  @param output_dir: String representing directory to write arff file
     #  @Return list of filepath
@@ -80,49 +81,46 @@ def split_arff(filepath, indices, trial_name, output_dir):
     return output_files
 
 
-def generate_moa_abrupt(
-        moa_file_path, 
-        stream_1_path, 
-        stream_2_path,
+def generate_moa_command(moa_file_path, stream, output_path, length):
+    # Generate command to run with MOA CLI to create gradual stream
+    # @param moa_file_path: String, path to execute moa
+    # @param stream: String representing stream to be generated
+    command_p1 = f'!cd {moa_file_path} && java -cp moa.jar -javaagent:sizeofag-1.0.4.jar' 
+    command_p2 = f'moa.DoTask "WriteStreamToARFFFile  -s ({stream}) -f {output_path} -m {length}"'
+    return f'{command_p1} {command_p2}'
+
+
+def generate_grad_stream_from_stream(
+        stream_1,
+        stream_2,
         position,
-        length,
-        output_path
+        width
+    ):
+    drift_stream = f'ConceptDriftStream -s ({stream_1}) -d ({stream_2}) -p {position} -w {width}'
+    return drift_stream
+
+
+def get_moa_stream_from_arff(file_path):
+    return f'ArffFileStream -f {file_path} -c 0'
+
+
+def generate_moa_abrupt_stream(
+        stream_1, 
+        stream_2,
+        position
     ):
     # Generate command to run with MOA CLI to create abrupt stream
-    command_p1 = f'!cd {moa_file_path} && java -cp moa.jar -javaagent:sizeofag-1.0.4.jar' 
-    stream_1 = f'(ArffFileStream -f {stream_1_path} -c 0)'
-    stream_2 = f'(ArffFileStream -f {stream_2_path} -c 0)'
-    drift_stream = f'(ConceptDriftStream -s {stream_1} -d {stream_2} -p {position} -w 1)'
-    command_p2 = f'moa.DoTask "WriteStreamToARFFFile  -s {drift_stream} -f {output_path} -m {length}"'
-    return f'{command_p1} {command_p2}'
+    drift_stream = f'ConceptDriftStream -s ({stream_1}) -d ({stream_2}) -p {position} -w 1'
+    return drift_stream
 
 
-def generate_moa_gradual(
-        moa_file_path, 
-        stream_1_path, 
-        stream_2_path,
-        position,
-        width,
-        length,
-        output_path
-    ):
-    # Generate command to run with MOA CLI to create gradual stream
-    command_p1 = f'!cd {moa_file_path} && java -cp moa.jar -javaagent:sizeofag-1.0.4.jar' 
-    stream_1 = f'(ArffFileStream -f {stream_1_path} -c 0)'
-    stream_2 = f'(ArffFileStream -f {stream_2_path} -c 0)'
-    drift_stream = f'(ConceptDriftStream -s {stream_1} -d {stream_2} -p {position} -w {width})'
-    command_p2 = f'moa.DoTask "WriteStreamToARFFFile  -s {drift_stream} -f {output_path} -m {length}"'
-    return f'{command_p1} {command_p2}'
-
-
-def plot_anomaly(X, y, start=0, end=sys.maxsize, title="", marker="-"):
+def plot_anomaly(X, y, ax, start=0, end=sys.maxsize, title="", marker="-"):
     # Plot the data with highlighted anomaly
-    plt.figure(figsize=(12,2))
-    plt.plot(np.arange(start,min(X.shape[0],end)), X[start:end], f"{marker}b")
+    ax.plot(np.arange(start,min(X.shape[0],end)), X[start:end], f"{marker}b")
     for (anom_start, anom_end) in find_anomaly_intervals(y):
         if start <= anom_end and anom_start <= anom_end:
             anom_start = max(start, anom_start)
             anom_end = min(end, anom_end)
-            plt.plot(np.arange(anom_start, anom_end), X[anom_start:anom_end], f"{marker}r")
+            ax.plot(np.arange(anom_start, anom_end), X[anom_start:anom_end], f"{marker}r")
     if len(title) > 0:
-        plt.title(title)
+        ax.set_title(title)
