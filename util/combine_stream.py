@@ -39,6 +39,15 @@ def find_anomaly_intervals(y):
     return anom_intervals
 
 
+def find_next_cut(start, p_drift, length, next_before, anom_int_source, anom_int_drift):
+    end = start + int(p_drift * length)
+    if next_before:
+        cut = [anom_int[1] for anom_int in anom_int_source if anom_int[1] >= end][0]
+    else:
+        cut = [anom_int[0] for anom_int in anom_int_drift[::-1] if anom_int[0] <= end][0]
+    return cut
+
+
 def split_arff(filepath, indices, trial_name, output_dir):
     #  Write new .arff files which splits original file from index
     #    File 0 contains points from index range [0, index_1)

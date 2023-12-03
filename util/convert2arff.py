@@ -22,7 +22,7 @@ def out2arff(filepath, classes="{0, 1}"):
 def main():
     #  Converts all files within specified directory from .out to .arff
     #  Deletes original .out file in directory
-    directory = "../data/benchmark/NASA-MSL"
+    directory = "../data/benchmark/ECG"
     for path in os.listdir(directory):
         if os.path.isfile(os.path.join(directory, path)) and path.split(".")[-1] == "out":
             try:
