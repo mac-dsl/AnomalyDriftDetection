@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-# import plotly.express as px
 import arff
 import sys
+import random
 
 
 def get_arff_data_labels(filename):
@@ -46,6 +46,59 @@ def find_next_cut(start, p_drift, length, next_before, anom_int_source, anom_int
     else:
         cut = [anom_int[0] for anom_int in anom_int_drift[::-1] if anom_int[0] <= end][0]
     return cut
+
+
+def get_split_index(anom_ints, p_drift, n_drift, seq_drift_before, length, min_width):
+    #  @param anom_ints: list of list of int representing anomaly intervals of input streams
+    #  @param p_drift: float representing percentage of target drift
+    #  @param n_drift: int representing number of drift sequences
+    #  @param seq_drift_before: list of boolean representing order of whether anomaly comes before or after drift transition
+    #  @param length: int representing total length of new stream
+    #  @param min_width: int representing minimum width for a data stream 
+    # n_trans = 2 * n_drift
+
+    # get divisions, make sure each stream is sufficiently long
+    divisions = get_divisions(p_drift, n_drift)
+    while min(divisions) < min_width/length:
+        divisions = get_divisions(p_drift, n_drift)
+
+    split_index = []
+    cut = 0
+    a_1, a_2 = anom_ints[0], anom_ints[1]
+    for i in range(len(divisions)-1):
+        cut = find_next_cut(cut, divisions[i], length, seq_drift_before[i], a_1, a_2)
+        a_1, a_2 = a_2, a_1
+        split_index.append(cut)
+    return split_index
+
+
+#  Randomly generate distribution of source and drift stream based on percentage of drift
+def get_divisions(p_drift, n_drift):
+    #  @param p_drift: float representing percentage of target drift
+    #  @param n_drift: int representing number of drift sequences
+    p_non_drift = 1 - p_drift
+    drift_div = [random.uniform(1,100) for _ in range(n_drift)]
+    non_drift_div = [random.uniform(1,100) for _ in range(n_drift + 1)]
+    total_drift = sum(drift_div)
+    total_non_drift = sum(non_drift_div)
+    drift_div_norm = [val/total_drift for val in drift_div]
+    non_drift_div_norm = [val/total_non_drift for val in non_drift_div]
+    divisions = []
+    for i in range(len(drift_div_norm)):
+        divisions.append(non_drift_div_norm[i] * p_non_drift)
+        divisions.append(drift_div_norm[i] * p_drift)
+    divisions.append(1 - sum(divisions))
+    return divisions
+
+
+def get_seq_drift_before(p_drift_before, n_drift):
+    #  @param p_drift_before: float representing percentage of drift transitions where anomaly comes before
+    #  @param n_drift: int representing number of drift sequences
+    n_before = int(p_drift_before * 2 * n_drift)
+    n_trans = 2 * n_drift
+    seq_drift_before = [True] * n_before + [False] * (n_trans - n_before)
+    random.shuffle(seq_drift_before)
+    return seq_drift_before
 
 
 def split_arff(filepath, indices, trial_name, output_dir):
