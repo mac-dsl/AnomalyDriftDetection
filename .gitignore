@@ -12,4 +12,5 @@ ipython_config.py
 
 *.DS_Store
 
-data/synthetic/NASA-MSL/gradual/intermediate/*
+data/synthetic/ECG/intermediate/*
+data/synthetic/IOPS/intermediate/*
