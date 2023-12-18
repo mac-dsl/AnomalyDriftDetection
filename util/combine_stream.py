@@ -234,7 +234,7 @@ def generate_moa_command(moa_file_path, stream, output_path, length):
     # Generate command to run with MOA CLI to create gradual stream
     # @param moa_file_path: String, path to execute moa
     # @param stream: String representing stream to be generated
-    command_p1 = f'!cd {moa_file_path} && java -cp moa.jar -javaagent:sizeofag-1.0.4.jar' 
+    command_p1 = f'cd {moa_file_path} && java -cp moa.jar -javaagent:sizeofag-1.0.4.jar' 
     command_p2 = f'moa.DoTask "WriteStreamToARFFFile  -s ({stream}) -f {output_path} -m {length}"'
     return f'{command_p1} {command_p2}'
 
