@@ -1,12 +1,14 @@
+import arff
 import numpy as np
 import matplotlib.pyplot as plt
-import arff
-import sys
 import random
+import sys
 
 
+## Find ndarray corresponding to data and labels from arff data
+#  @param filename: string, filename of arff data source
+#  @Return X, y: ndarrays corresponding to data (N, 1) and labels (N,) from arff data
 def get_arff_data_labels(filename):
-    # Return ndarray corresponding to data and labels from arff data
     arff_content = arff.load(f.replace(',\n','\n') for f in open(filename, 'r'))
     data = arff_content['data']
     X = np.array([i[:1] for i in data])
@@ -14,10 +16,10 @@ def get_arff_data_labels(filename):
     return X, y.astype(float)
 
 
+## Find the intervals where there is an anomaly
+#  @param y: ndarray of shape (N,) corresponding to anomaly labels
+#  @Return list of lists denoting anomaly intervals in the form [start, end)
 def find_anomaly_intervals(y):
-    # Return the intervals where there is an anomaly
-    # @param y: ndarray of shape (N,) corresponding to anomaly labels
-    # @Return list of lists denoting anomaly intervals in the form [start, end)
     change_indices = np.where(np.diff(y) != 0)[0]
     if len(change_indices) == 0:
         return []
@@ -39,43 +41,87 @@ def find_anomaly_intervals(y):
     return anom_intervals
 
 
-def find_next_cut(start, p_drift, length, next_before, anom_int_source, anom_int_drift):
-    end = start + int(p_drift * length)
-    if next_before:
-        cut = [anom_int[1] for anom_int in anom_int_source if anom_int[1] >= end][0]
-    else:
-        cut = [anom_int[0] for anom_int in anom_int_drift[::-1] if anom_int[0] <= end][0]
-    return cut
+## Function to return indices to cut source arff files to combine
+#  @param target_p_drift: float, target percentage of drift
+#  @param target_n_drift: int, target number of drift sequences
+#  @param length: int, total length of new stream
+#  @param p_drift_after: float, target percent of drift coming after anomaly
+#  @param max_stream: int, maximum stream index (ex. for 6 streams, stream index 5 is max) 
+#  @param anom_ints: list of list of int, anomaly intervals [start, end] of input streams
+#  @Returns streams, positions, w_drift, stream_cuts, seq_drift_after
+def get_split_index(target_p_drift, target_n_drift, length, p_drift_after, max_stream, anom_ints):
+    print('Getting divisions...')
+    # multiply n_drift by a factor to account for reduced number of drifts later
+    divisions = get_divisions(target_p_drift*1.5, int(target_n_drift*1.5), length)
+    w_drift = [divisions[i] for i in range(1,2*target_n_drift,2)]
+    w_stream = [divisions[i] for i in range(0,2*target_n_drift+1,2)]
+    while min(w_stream) < min(w_drift) * 5 or w_stream[0] < w_drift[0]: ## check this
+        divisions = get_divisions(target_p_drift, target_n_drift, length)
+        w_drift = [divisions[i] for i in range(1,2*target_n_drift,2)]
+        w_stream = [divisions[i] for i in range(0,2*target_n_drift+1,2)]
+    
+    print('Getting order of drifts coming after anomaly...')
+    seq_drift_after = get_seq_drift_after(p_drift_after, target_n_drift)
+
+    print('Getting drift center positions...') 
+    curr_stream = random.randint(0,max_stream)
+    streams = [curr_stream]
+    positions = []
+    init_pos = divisions[0]
+    for n in range(target_n_drift):
+        curr_stream = get_next_stream(curr_stream, max_stream)
+        streams.append(curr_stream)
+        # Note: may not result in exact lengths specified in divisions
+        # due to positions of actual anomalies in data
+        drift_pos = find_next_drift_pos(
+            init_pos,
+            w_drift[n], 
+            seq_drift_after[n], 
+            anom_ints[streams[n]], 
+            anom_ints[streams[n+1]]
+        )
+        if drift_pos == -1:
+            break
+        init_pos = drift_pos + w_stream[n+1]
+        positions.append(drift_pos)
+    
+    print('Getting stream file cuts...')
+    n_drift = len(positions)
+    seq_drift_after = seq_drift_after[:n_drift]
+    w_drift = w_drift[:n_drift]
+    streams = streams[:n_drift+1]
+    
+    stream_cuts = [[] for i in range(max_stream + 1)]
+    for (i,drift_after) in enumerate(seq_drift_after):
+        s_prev, s_next  = streams[i], streams[i+1]
+        if drift_after:
+            stream_cuts[s_prev].append(positions[i] + w_drift[i])
+            for j in range(max_stream + 1):
+                if j != s_prev: 
+                    stream_cuts[j].append(positions[i] )
+        else:
+            stream_cuts[s_next].append(positions[i] - w_drift[i])
+            for j in range(max_stream + 1):
+                if j != s_next: 
+                    stream_cuts[j].append(positions[i] )
+
+    ## @Returns
+    #    streams: list of int, denoting order of streams in combination
+    #    positions: list of int, center position of drift
+    #    w_drift: list of int, width of each drift
+    #    stream_cuts: list of list of int, where to cut each source arff file
+    #    seq_drift_after: list of boolean indicating whether drift comes after or before anomaly 
+
+    return streams, positions, w_drift, stream_cuts, seq_drift_after
 
 
-def get_split_index(anom_ints, p_drift, n_drift, seq_drift_before, length, min_width):
-    #  @param anom_ints: list of list of int representing anomaly intervals of input streams
-    #  @param p_drift: float representing percentage of target drift
-    #  @param n_drift: int representing number of drift sequences
-    #  @param seq_drift_before: list of boolean representing order of whether anomaly comes before or after drift transition
-    #  @param length: int representing total length of new stream
-    #  @param min_width: int representing minimum width for a data stream 
-    # n_trans = 2 * n_drift
-
-    # get divisions, make sure each stream is sufficiently long
-    divisions = get_divisions(p_drift, n_drift)
-    while min(divisions) < min_width/length:
-        divisions = get_divisions(p_drift, n_drift)
-
-    split_index = []
-    cut = 0
-    a_1, a_2 = anom_ints[0], anom_ints[1]
-    for i in range(len(divisions)-1):
-        cut = find_next_cut(cut, divisions[i], length, seq_drift_before[i], a_1, a_2)
-        a_1, a_2 = a_2, a_1
-        split_index.append(cut)
-    return split_index
-
-
-#  Randomly generate distribution of source and drift stream based on percentage of drift
-def get_divisions(p_drift, n_drift):
-    #  @param p_drift: float representing percentage of target drift
-    #  @param n_drift: int representing number of drift sequences
+## Randomly generate distribution of source and drift stream based on percentage of drift
+#  @param p_drift: float, percentage of target drift
+#  @param n_drift: int, number of drift sequences
+#  @param length: int, total length of final data stream
+#  @Return divisions: list of int, widths corresponding to each alternating 
+#     non-drift/drift sequence
+def get_divisions(p_drift, n_drift, length):
     p_non_drift = 1 - p_drift
     drift_div = [random.uniform(1,100) for _ in range(n_drift)]
     non_drift_div = [random.uniform(1,100) for _ in range(n_drift + 1)]
@@ -88,29 +134,70 @@ def get_divisions(p_drift, n_drift):
         divisions.append(non_drift_div_norm[i] * p_non_drift)
         divisions.append(drift_div_norm[i] * p_drift)
     divisions.append(1 - sum(divisions))
+    divisions = [int(length * p) for p in divisions]
     return divisions
 
 
-def get_seq_drift_before(p_drift_before, n_drift):
-    #  @param p_drift_before: float representing percentage of drift transitions where anomaly comes before
-    #  @param n_drift: int representing number of drift sequences
-    n_before = int(p_drift_before * 2 * n_drift)
-    n_trans = 2 * n_drift
-    seq_drift_before = [True] * n_before + [False] * (n_trans - n_before)
-    random.shuffle(seq_drift_before)
-    return seq_drift_before
+## Randomly generates next different stream in sequence
+#  @param curr_stream: int, index of current stream (ex. stream 0, stream 1, etc)
+#  @param total_streams: int, total number of streams
+#  @Return next_stream: int, index of next stream
+def get_next_stream(curr_stream, max_stream=5):
+    next_stream = random.randint(0,max_stream)
+    while next_stream == curr_stream:
+        next_stream = random.randint(0,max_stream)
+    return next_stream
 
 
+## Randomly generates sequence of relative drift position (ie. after or before anomaly)
+#    where True indicates that the drift occurs after the anomaly
+#  @param p_drift_after: float, percentage of drift transitions where anomaly comes before
+#  @param n_drift: int, number of drift sequences
+#  @Return seq_drift_after: list of boolean of relative drift position
+def get_seq_drift_after(p_drift_after, n_drift):
+    n_before = int(p_drift_after * n_drift)
+    n_after = n_drift - n_before
+    seq_drift_after = [True] * n_before + [False] * n_after
+    random.shuffle(seq_drift_after)
+    return seq_drift_after
+
+
+## Identify position of drift based on an initial position and existing anomalies in stream
+#  @param init_pos: int, initial position to guide selection of new drift position
+#  @param w_drift: int, width of drift
+#  @param drift_after: boolean, relative position of drift surrounding anomaly
+#  @param anom_int_curr: list of list of int, anomaly intervals of current stream
+#  @param anom_int_next: list of list of int, anomaly intervals of next stream
+#  @Return drift_pos: int, center position of drift
+def find_next_drift_pos(init_pos, w_drift, drift_after, anom_int_curr, anom_int_next):
+    end = init_pos + w_drift
+    if drift_after:
+        try:
+            drift_pos = min(anom_int[1] for anom_int in anom_int_curr if anom_int[1] >= end)
+        except:
+            drift_pos = -1
+        else:
+            drift_pos += w_drift // 2
+    else:
+        try:
+            drift_pos = min(anom_int[0] for anom_int in anom_int_next if anom_int[0] >= end)
+        except:
+            drift_pos = -1
+        else:
+            drift_pos -= w_drift // 2
+    return drift_pos
+
+
+## Write new .arff files which splits original file from index
+#    File 0 contains points from index range [0, index_1)
+#    File n contains points from index range [index_{n-1}, index_n) for 0 < n < N
+#    File N contains points from index range [index_N - 1, file_length)
+#  @param filepath: String representing filepath of .arff file to split
+#  @param indices: list of int representing N-1 indices of original data to split file
+#  @param trial_name: String representing identifying name of split
+#  @param output_dir: String representing directory to write arff file
+#  @Return list of filepath
 def split_arff(filepath, indices, trial_name, output_dir):
-    #  Write new .arff files which splits original file from index
-    #    File 0 contains points from index range [0, index_1)
-    #    File n contains points from index range [index_{n-1}, index_n) for 0 < n < N
-    #    File N contains points from index range [index_N - 1, file_length)
-    #  @param filepath: String representing filepath of .arff file to split
-    #  @param indices: list of int representing N-1 indices of original data to split file
-    #  @param trial_name: String representing identifying name of split
-    #  @param output_dir: String representing directory to write arff file
-    #  @Return list of filepath
     file = filepath.split('/')[-1]
     if output_dir == None:
         output_dir = filepath[:-len(file)]
@@ -133,12 +220,12 @@ def split_arff(filepath, indices, trial_name, output_dir):
         with open(output_file_name, 'w') as output_file:
             output_file.writelines(header_lines + data)
         output_files.append(output_file_name)
-        print(f"Generated file: {output_file_name}")
+        # print(f"Generated file: {output_file_name}")
     data = content[indices[-1]+7:]
     output_file_name = f"{output_dir}{filename}_{trial_name}_{len(indices)}.arff"
     with open(output_file_name, 'w') as output_file:
         output_file.writelines(header_lines + data)
-    print(f"Generated file: {output_file_name}")
+    # print(f"Generated file: {output_file_name}")
     output_files.append(output_file_name)
     return output_files
 
