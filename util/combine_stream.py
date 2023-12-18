@@ -4,6 +4,15 @@ import matplotlib.pyplot as plt
 import random
 import sys
 
+COLOURS = {
+    0: 'tab:blue',
+    1: 'tab:green',
+    2: 'tab:red',
+    3: 'tab:cyan',
+    4: 'tab:pink',
+    5: 'tab:purple',
+    'drift': 'tab:olive'
+}
 
 ## Find ndarray corresponding to data and labels from arff data
 #  @param filename: string, filename of arff data source
@@ -263,13 +272,58 @@ def generate_moa_abrupt_stream(
     return drift_stream
 
 
-def plot_anomaly(X, y, ax, start=0, end=sys.maxsize, title="", marker="-"):
-    # Plot the data with highlighted anomaly
-    ax.plot(np.arange(start,min(X.shape[0],end)), X[start:end], f"{marker}b")
+#  @params X: int iterable, data points
+#  @params y: int iterable, anomaly labels
+#  @params ax: Axes object to plot graph
+#  @params start: int, start of interval to plot
+#  @params end: int, endn of interval to plot
+#  @params title: string, title of plot
+#  @params marker: string, marker type for plot, default '-' (line)
+#  @params size: int, fontsize, default=10
+def plot_anomaly(X, y, ax, start=0, end=sys.maxsize, title="", marker="-", size=10):
+    """
+    Plot the data with highlighted anomaly
+    """
+    ax.plot(np.arange(start, min(X.shape[0], end)), X[start:end], f"{marker}b")
     for (anom_start, anom_end) in find_anomaly_intervals(y):
         if start <= anom_end and anom_start <= anom_end:
             anom_start = max(start, anom_start)
             anom_end = min(end, anom_end)
             ax.plot(np.arange(anom_start, anom_end), X[anom_start:anom_end], f"{marker}r")
     if len(title) > 0:
-        ax.set_title(title)
+        ax.set_title(title, size=size)
+
+
+#  @param positions: list of int, center position of drift
+#  @params y: int iterable, drift labels
+#  @params streams: list of int, denoting order of streams in combination
+#  @params ax: Axes object to plot graph
+#  @params colours: dictionary representing background colours for 
+#        denoting stream segments
+#  @params start: int, start of interval to plot
+#  @params end: int, endn of interval to plot
+def plot_stream_drift(positions, y, streams, ax, colours=COLOURS, start=0, end=sys.maxsize):
+    """
+    Plot source stream and drift periods
+    """
+    positions = [0] + positions + [len(y)]
+    for i in range(0, len(positions)-1):
+        if positions[i] > end:
+            break
+        elif positions[i+1] < start:
+            pass
+        else:
+            s_start = max(start, positions[i])
+            s_end = min(positions[i+1], end)
+            colour = colours[streams[i]]
+            ax.axvspan(s_start, s_end, facecolor=colour, alpha=0.3)
+    drift_ints = [di for di in find_anomaly_intervals(y) if di[0] < end or di[1] > start]
+    for (i, (drift_start, drift_end)) in enumerate(drift_ints):
+        if drift_start > end:
+            break
+        elif drift_end < start:
+            pass
+        else:
+            drift_start = max(start, drift_start)
+            drift_end = min(end, drift_end)
+            ax.axvspan(drift_start, drift_end, facecolor=colours['drift'], alpha=1, label='_'*i + 'drift')
