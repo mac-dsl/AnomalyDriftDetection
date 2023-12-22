@@ -11,7 +11,7 @@ COLOURS = {
     3: 'tab:cyan',
     4: 'tab:pink',
     5: 'tab:purple',
-    'drift': 'tab:olive'
+    'drift': 'gold'
 }
 
 
@@ -26,7 +26,7 @@ def get_arff_data_labels(filename):
     data = arff_content['data']
     X = np.array([i[:1] for i in data])
     y = np.array([i[-1] for i in data])
-    return X, y.astype(float)
+    return X.astype(float), y.astype(float)
 
 
 #  @param y: ndarray of shape (N,) corresponding to anomaly labels
@@ -76,16 +76,16 @@ def get_split_index(
     """
     Function to return indices to cut source arff files to combine
     """
-    print('Getting divisions...')
+    print('Getting partitions...')
     # multiply n_drift by a factor to account for reduced number of
     # final drifts
-    divisions = get_divisions(p_drift, int(n_drift), length)
-    w_drift = [divisions[i] for i in range(1, 2*n_drift, 2)]
-    w_stream = [divisions[i] for i in range(0, 2*n_drift+1, 2)]
+    partitions = get_partitions(p_drift, int(n_drift), length)
+    w_drift = [partitions[i] for i in range(1, 2*n_drift, 2)]
+    w_stream = [partitions[i] for i in range(0, 2*n_drift+1, 2)]
     while min(w_stream) < min(w_drift) * 5 or w_stream[0] < w_drift[0]:
-        divisions = get_divisions(p_drift, int(n_drift), length)
-        w_drift = [divisions[i] for i in range(1, 2*n_drift, 2)]
-        w_stream = [divisions[i] for i in range(0, 2*n_drift+1, 2)]
+        partitions = get_partitions(p_drift, int(n_drift), length)
+        w_drift = [partitions[i] for i in range(1, 2*n_drift, 2)]
+        w_stream = [partitions[i] for i in range(0, 2*n_drift+1, 2)]
 
     print('Getting order of drifts coming after anomaly...')
     seq_drift_after = get_seq_drift_after(p_drift_after, n_drift)
@@ -94,11 +94,11 @@ def get_split_index(
     curr_stream = random.randint(0, max_stream)
     streams = [curr_stream]
     positions = []
-    init_pos = divisions[0]
+    init_pos = partitions[0]
     for n in range(n_drift):
         curr_stream = get_next_stream(curr_stream, max_stream)
         streams.append(curr_stream)
-        # Note: may not result in exact lengths specified in divisions
+        # Note: may not result in exact lengths specified in partitions
         # due to positions of actual anomalies in data
         drift_pos = find_next_drift_pos(
             init_pos,
@@ -145,9 +145,9 @@ def get_split_index(
 #  @param p_drift: float, percentage of target drift
 #  @param n_drift: int, number of drift sequences
 #  @param length: int, total length of final data stream
-#  @Return divisions: list of int, widths corresponding to each alternating
+#  @Return partitions: list of int, widths corresponding to each alternating
 #     non-drift/drift sequence
-def get_divisions(p_drift, n_drift, length):
+def get_partitions(p_drift, n_drift, length):
     """
     Randomly generate distribution of source and drift stream based on
     percentage of drift
@@ -159,13 +159,13 @@ def get_divisions(p_drift, n_drift, length):
     total_non_drift = sum(non_drift_div)
     drift_div_norm = [val/total_drift for val in drift_div]
     non_drift_div_norm = [val/total_non_drift for val in non_drift_div]
-    divisions = []
+    partitions = []
     for (i, ddn) in enumerate(drift_div_norm):
-        divisions.append(non_drift_div_norm[i] * p_non_drift)
-        divisions.append(ddn * p_drift)
-    divisions.append(1 - sum(divisions))
-    divisions = [int(length * p) for p in divisions]
-    return divisions
+        partitions.append(non_drift_div_norm[i] * p_non_drift)
+        partitions.append(ddn * p_drift)
+    partitions.append(1 - sum(partitions))
+    partitions = [int(length * p) for p in partitions]
+    return partitions
 
 
 #  @param curr_stream: int, index of current stream (ex. stream 0, stream 1)
@@ -252,8 +252,14 @@ def split_arff(filepath, indices, trial_name, output_dir):
     output_files = []
 
     with open(filepath, 'r') as input_file:
-        for line in input_file:
-            content.append(f"{line.strip()}\n")
+        for (i, line) in enumerate(input_file):
+            if i > 7:
+                num_vals = line.strip().split(',')[:-1]
+                num_vals = [float(n) for n in num_vals]
+                newline = f"{num_vals[0]},{num_vals[1]},\n"
+                content.append(newline)
+            else:
+                content.append(line)
 
     header_lines = content[:7]
     for i in range(len(indices)):
@@ -308,7 +314,7 @@ def generate_grad_stream_from_stream(
 
 #  @param file_path: String, filepath to source arff file
 #  @Return string, representation of MOA ArffFileStream
-def get_moa_stream_from_arff(file_path):
+def get_stream_from_arff(file_path):
     """
     Generate command line representation of MOA ArffFileStream object
     """
@@ -319,7 +325,7 @@ def get_moa_stream_from_arff(file_path):
 #  @param stream_2: String, second stream in drift
 #  @param position: int, center positions of drift
 #  @Return string, representation of resultant MOA stream
-def generate_moa_abrupt_stream(
+def generate_abrupt_stream_from_stream(
         stream_1,
         stream_2,
         position
@@ -340,16 +346,21 @@ def generate_moa_abrupt_stream(
 #  @params title: string, title of plot
 #  @params marker: string, marker type for plot, default '-' (line)
 #  @params size: int, fontsize, default=10
-def plot_anomaly(X, y, ax, start=0, end=sys.maxsize, title="", marker="-", size=10):
+def plot_anomaly(X, y, ax, start=0, end=sys.maxsize, title="", marker="-", size=10, show_label=False):
     """
     Plot the data with highlighted anomaly
     """
-    ax.plot(np.arange(start, min(X.shape[0], end)), X[start:end], f"{marker}b")
-    for (anom_start, anom_end) in find_anomaly_intervals(y):
+    ax.plot(np.arange(start, min(X.shape[0], end)), X[start:end],
+            f"{marker}b", label="_"*(not show_label) + "Drift Stream")
+    for (i, (anom_start, anom_end)) in enumerate(find_anomaly_intervals(y)):
         if start <= anom_end and anom_start <= anom_end:
             anom_start = max(start, anom_start)
             anom_end = min(end, anom_end)
-            ax.plot(np.arange(anom_start, anom_end), X[anom_start:anom_end], f"{marker}r")
+            ax.plot(np.arange(anom_start, anom_end),
+                    X[anom_start:anom_end],
+                    f"{marker}r",
+                    label="_"*(i + (not show_label)) + "Anomaly"
+                    )
     if len(title) > 0:
         ax.set_title(title, size=size)
 
@@ -366,7 +377,7 @@ def plot_stream_drift(positions, y, streams, ax, colours=COLOURS, start=0, end=s
     """
     Plot source stream and drift periods
     """
-    positions = [0] + positions + [len(y)]
+    positions = positions + [len(y)]
     for i in range(0, len(positions)-1):
         if positions[i] > end:
             break
@@ -387,3 +398,7 @@ def plot_stream_drift(positions, y, streams, ax, colours=COLOURS, start=0, end=s
             drift_start = max(start, drift_start)
             drift_end = min(end, drift_end)
             ax.axvspan(drift_start, drift_end, facecolor=colours['drift'], alpha=1, label='_'*i + 'drift')
+
+
+## Alternative: place drift positions according to partitions
+#  adjust percentage through width size of each drift

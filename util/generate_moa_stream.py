@@ -11,7 +11,7 @@ OUTPUT_DIR = "/Users/tammyz/Desktop/3H03/AnomalyDriftDetection/data/synthetic"
 
 #  Create new gradual drift-injected stream using MOA based on parameters
 #  @param selected_streams: list of string representing arff filenames of streams
-#  @param target_n_drift: int, target number of drift sequences
+#  @param n_drift: int, target number of drift sequences
 #  @param length: int, total length of new stream
 #  @param p_drift_after: float, target percent of drift coming after anomaly
 #  @param max_stream: int, maximum stream index (ex. for 6 streams, stream index 5 is max)
@@ -20,8 +20,8 @@ OUTPUT_DIR = "/Users/tammyz/Desktop/3H03/AnomalyDriftDetection/data/synthetic"
 #  @Returns output_path, drift_label, positions, streams, seq_drift_after
 def run_generate_grad_stream_moa(
         selected_streams,
-        target_p_drift,
-        target_n_drift,
+        p_drift,
+        n_drift,
         length,
         p_drift_after,
         max_stream,
@@ -29,13 +29,8 @@ def run_generate_grad_stream_moa(
         trial_name
         ):
     print('Generating splits...')
-    while True:
-        try:
-            streams, positions, w_drift, stream_cuts, seq_drift_after = get_split_index(target_p_drift, target_n_drift, length, p_drift_after, max_stream, anom_ints)
-        except:
-            pass
-        else:
-            break
+    streams, positions, w_drift, stream_cuts, seq_drift_after = \
+        get_split_index(p_drift, n_drift, length, p_drift_after, max_stream, anom_ints)
 
     print('Creating intermediate files...')
     streams_intermed = []
@@ -49,7 +44,7 @@ def run_generate_grad_stream_moa(
     print('Recursively generating MOA command...')
     moa_streams = []
     for (i, s) in enumerate(streams):
-        moa_streams.append(get_moa_stream_from_arff(streams_intermed[s][i]))
+        moa_streams.append(get_stream_from_arff(streams_intermed[s][i]))
 
     for i in range(1, len(moa_streams)):
         if i > 1:
@@ -75,6 +70,12 @@ def run_generate_grad_stream_moa(
     drift_label = get_drift_labels(positions, w_drift, length)
     drift_label_df = pd.DataFrame(drift_label)
     drift_label_df.to_csv(f'{OUTPUT_DIR}/{trial_name}/{filename}.csv')
+
+    drifts_param_df = pd.DataFrame({
+        'streams': streams,
+        'positions': [0] + positions
+        })
+    drifts_param_df.to_csv(f'{OUTPUT_DIR}/{trial_name}/{filename}_params.csv')
 
     #  @Returns
     #    output_path: string, path to file where generated data stream is exported to
