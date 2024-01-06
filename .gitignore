@@ -12,5 +12,4 @@ ipython_config.py
 
 *.DS_Store
 
-data/synthetic/ECG/intermediate/*
-data/synthetic/IOPS/intermediate/*
+data/synthetic/intermediate/*
