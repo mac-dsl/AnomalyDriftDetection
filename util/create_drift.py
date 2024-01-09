@@ -67,7 +67,7 @@ def find_anomaly_intervals(y):
 #  @param total_anoms: list of tuple of (int, [int, int]),
 #      Represents (stream, [start, end]) for anomaly intervals across all
 #      streams ordered by start position
-#  @Returns streams, positions, w_drift, stream_cuts, seq_drift_before
+#  @Returns streams, positions, w_drift, stream_cuts, seq_before
 def get_split_index(
         length,
         p_drift,
@@ -92,7 +92,7 @@ def get_split_index(
     # Construct lists representing characteristics of each individual
     # drift
     print('\tGetting order of drifts coming before anomaly...')
-    seq_drift_before = get_seq_drift_before(p_before, n_drift)
+    seq_before = get_seq_before(p_before, n_drift)
     print('\tGetting drift center positions...')
     curr_stream = random.randint(0, max_stream)
     streams = [curr_stream]
@@ -102,7 +102,7 @@ def get_split_index(
         curr_stream, drift_pos = find_next_drift_pos(
             init_pos,
             w_drift[n],
-            seq_drift_before[n],
+            seq_before[n],
             total_anom_ints,
             curr_stream
         )
@@ -113,35 +113,15 @@ def get_split_index(
         positions.append(drift_pos)
 
     print('\tGetting stream file cuts...')
-    n_drift = len(positions)
-    seq_drift_before = seq_drift_before[:n_drift]
-    w_drift = w_drift[:n_drift]
-    streams = streams[:n_drift+1]
-
-    # Determine where ARFF files should be split to create
-    # intermediate files
-    stream_cuts = [[] for i in range(max_stream + 1)]
-    for (i, drift_before) in enumerate(seq_drift_before):
-        s_prev, s_next = streams[i], streams[i+1]
-        if drift_before:
-            stream_cuts[s_next].append(positions[i] - w_drift[i])
-            for j in range(max_stream + 1):
-                if j != s_next:
-                    stream_cuts[j].append(positions[i])
-        else:
-            stream_cuts[s_prev].append(positions[i] + w_drift[i])
-            for j in range(max_stream + 1):
-                if j != s_prev:
-                    stream_cuts[j].append(positions[i])
 
     #  @Returns
     #    streams: list of int, denoting order of streams in combination
     #    positions: list of int, center position of drift
     #    w_drift: list of int, width of each drift
     #    stream_cuts: list of list of int, where to cut each source arff file
-    #    seq_drift_before: list of boolean indicating relative drift position
+    #    seq_before: list of boolean indicating relative drift position
 
-    return streams, positions, w_drift, stream_cuts, seq_drift_before
+    return streams, positions, w_drift, seq_before
 
 
 #  @param p_drift: float, percentage of target drift
@@ -205,17 +185,17 @@ def get_total_anoms(anom_ints):
 #  @param p_before: float, percentage of drift transitions where drift is
 #                     inserted before anomaly
 #  @param n_drift: int, number of drift sequences
-#  @Return seq_drift_before: list of boolean of relative drift position
-def get_seq_drift_before(p_before, n_drift):
+#  @Return seq_before: list of boolean of relative drift position
+def get_seq_before(p_before, n_drift):
     """
     Randomly generates sequence of relative drift position (ie. before anomaly)
     where True indicates that the drift occurs before the anomaly
     """
     n_before = int(p_before * n_drift)
     n_after = n_drift - n_before
-    seq_drift_before = [True] * n_before + [False] * n_after
-    random.shuffle(seq_drift_before)
-    return seq_drift_before
+    seq_before = [True] * n_before + [False] * n_after
+    random.shuffle(seq_before)
+    return seq_before
 
 
 #  @param init_pos: int, initial position to guide selection of drift position
@@ -269,3 +249,40 @@ def find_next_drift_pos(
         else:
             drift_pos -= w_drift // 2
     return next_stream, drift_pos
+
+
+#  @param positions: list of int, center position of drift
+#  @param seq_before: list of boolean indicating relative drift position
+#  @param w_drift: list of int, width of each drift
+#  @param streams: list of int, denoting order of streams in combination
+#  @param max_stream: int, maximum stream index
+#                 (ex. for 6 streams, stream index 5 is max)
+#  @Returns stream_cuts: list of list of int, indices to split intermediate
+#                 ARFF files in the form [L_0, L_1, ... , L_{N-1}], where
+#                 each L_i is a list of int
+def get_stream_cuts(positions, seq_before, w_drift, streams, max_stream):
+    """
+    Helper function to combine streams, determines index to split
+    intermediate ARFF files
+    """
+    n_drift = len(positions)
+    seq_before = seq_before[:n_drift]
+    w_drift = w_drift[:n_drift]
+    streams = streams[:n_drift+1]
+
+    # Determine where ARFF files should be split to create
+    # intermediate files
+    stream_cuts = [[] for i in range(max_stream + 1)]
+    for (i, drift_before) in enumerate(seq_before):
+        s_prev, s_next = streams[i], streams[i+1]
+        if drift_before:
+            stream_cuts[s_next].append(positions[i] - w_drift[i])
+            for j in range(max_stream + 1):
+                if j != s_next:
+                    stream_cuts[j].append(positions[i])
+        else:
+            stream_cuts[s_prev].append(positions[i] + w_drift[i])
+            for j in range(max_stream + 1):
+                if j != s_prev:
+                    stream_cuts[j].append(positions[i])
+    return stream_cuts

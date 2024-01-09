@@ -36,12 +36,14 @@ class PlotStream:
         )
         self.drift_name = filename          # string, file name
         self.drift_X = X                    # ndarray, data (drift stream)
-        self.drift_y = y                    # ndarray, anomaly labels (drift stream)
+        self.drift_y_anom = y               # ndarray, anomaly labels (drift stream)
         self.length = len(y)                # int, length of drift stream
         self.drift_label = params[0]        # list of int, labels indicating drift, {0,1}
         self.source_streams = params[1]     # list of string, source file names
         self.streams = params[2]            # list of int, stream order
         self.positions = params[3]          # list of int, center positions for drift
+        self.w_drift = params[4]         # list of boolean, drift inserted before anomaly
+        self.seq_before = params[5]         # list of boolean, drift inserted before anomaly
         Xs, ys = self.get_source_data_labels(source_dir)
         self.source_Xs = Xs                 # list of ndarray, data
         self.source_ys = ys                 # list of ndarray, anomaly labels
@@ -79,8 +81,12 @@ class PlotStream:
                 positions = line.split(': ')[-1]
                 positions = ast.literal_eval(positions)
                 positions = [0] + positions
+            elif line.split(':')[0] == 'Drift Widths':
+                w_drift = line.split(': ')[-1]
+                w_drift = ast.literal_eval(w_drift)
             elif line.split(':')[0] == 'Drift Before':
-                continue
+                seq_before = line.split(': ')[-1]
+                seq_before = ast.literal_eval(seq_before)
             else:
                 if line.split(':')[0] != 'Source Streams':
                     source_streams.append(line.split(':')[-1].strip())
@@ -91,7 +97,7 @@ class PlotStream:
         #    streams: list of int, denoting order of streams in combination
         #    positions: list of int, center position of drift
                     
-        return drift_label, source_streams, streams, positions
+        return drift_label, source_streams, streams, positions, w_drift, seq_before
 
     #  @params source_dir: string, filepath to directory containing source files
     #  @Return Xs: list of ndarray, contains data for source streams
@@ -125,17 +131,22 @@ class PlotStream:
         end = min(X.shape[0], end)
         ax.plot(np.arange(start, end), X[start:end],
                 f"{marker}b", label="_"*(not show_label) + "Non-Anomalous")
-        for (i, (anom_start, anom_end)) in enumerate(find_anomaly_intervals(y)):
-            if start <= anom_end and anom_start <= anom_end:
-                anom_start = max(start, anom_start)
-                anom_end = min(end, anom_end)
-                label = "_"*(i + (not show_label)) + "Anomaly"
-                ax.plot(
-                    np.arange(anom_start, anom_end),
-                    X[anom_start:anom_end],
-                    f"{marker}r",
-                    label=label
-                )
+        anom_ints = [
+            ai for ai in find_anomaly_intervals(y) if
+            (ai[0] < end and ai[0] > start) or
+            (ai[1] < end and ai[1] > start) or
+            (ai[0] < start and ai[1] > end)
+        ]
+        for (i, (anom_start, anom_end)) in enumerate(anom_ints):
+            anom_start = max(start, anom_start)
+            anom_end = min(end, anom_end)
+            label = "_"*(i + (not show_label)) + "Anomaly"
+            ax.plot(
+                np.arange(anom_start, anom_end),
+                X[anom_start:anom_end],
+                f"{marker}r",
+                label=label
+            )
         if len(title) > 0:
             ax.set_title(title, size=size)
 
@@ -173,21 +184,21 @@ class PlotStream:
                     s_start, s_end, facecolor=colour, alpha=0.3, label=label
                 )
                 show_label_streams[s] += 1
-        drift_ints = [di for di in find_anomaly_intervals(y)]
+        drift_ints = [
+            di for di in find_anomaly_intervals(y) if
+            (di[0] < end and di[0] > start) or
+            (di[1] < end and di[1] > start) or
+            (di[0] < start and di[1] > end)
+        ]
         show_label = 0
         for (i, (drift_start, drift_end)) in enumerate(drift_ints):
-            if drift_start > end:
-                break
-            elif drift_end < start:
-                pass
-            else:
-                drift_start = max(start, drift_start)
-                drift_end = min(end, drift_end)
-                label = '_'*show_label + 'drift'
-                ax.axvspan(
-                    drift_start, drift_end, facecolor=colours['drift'], alpha=1, label=label
-                )
-                show_label += 1
+            drift_start = max(start, drift_start)
+            drift_end = min(end, drift_end)
+            label = '_'*show_label + 'drift'
+            ax.axvspan(
+                drift_start, drift_end, facecolor=colours['drift'], alpha=1, label=label
+            )
+            show_label += 1
 
     #  @params start: int, start of interval to plot, default: 0
     #  @params end: int, endn of interval to plot, default: sys.maxsize 
@@ -213,7 +224,7 @@ class PlotStream:
 
         # Plot drift stream
         self.plot_anomaly(
-            self.drift_X, self.drift_y, ax[-1], start, end, self.drift_name, size=8
+            self.drift_X, self.drift_y_anom, ax[-1], start, end, self.drift_name, size=8
         )
         self.plot_stream_drift(
             positions=self.positions,
@@ -236,7 +247,7 @@ class PlotStream:
         end = min(end, self.length)
         fig, ax = plt.subplots(figsize=(10, 3))
         self.plot_anomaly(
-            self.drift_X, self.drift_y, ax, start, end, self.drift_name, size=8
+            self.drift_X, self.drift_y_anom, ax, start, end, self.drift_name, size=8
         )
         self.plot_stream_drift(
             self.positions, self.drift_label, self.streams, ax, self.colours, start, end
@@ -270,19 +281,19 @@ class PlotStream:
         end = min(end, self.length)
         parent_i = [self.streams[k-1], self.streams[k]]
         parent_streams = [self.source_streams[i] for i in parent_i]
-        fig, ax = plt.subplots(3, 1, figsize=(10, 6), sharey=True)
+        fig, ax = plt.subplots(3, 1, figsize=(10, 8), sharey=True)
 
         # for each source stream, plot stream and background colour
         for (i, s) in enumerate(parent_streams):
             X, y = self.source_Xs[parent_i[i]], self.source_ys[parent_i[i]]
             colour = COLOURS[parent_i[i]]
             self.plot_anomaly(X, y, ax[i], start, end, title=s, size=8, show_label=False)
-            ax[i].axvspan(start, end, facecolor=colour, alpha=0.3)
+            ax[i].axvspan(start, end, facecolor=colour, alpha=0.3, label=f'stream {parent_i[i]}')
             ax[i].tick_params(axis='x', labelsize=8)
 
         # Plot drift stream
         self.plot_anomaly(
-            self.drift_X, self.drift_y, ax[-1], start, end, self.drift_name, size=8,
+            self.drift_X, self.drift_y_anom, ax[-1], start, end, self.drift_name, size=8,
         )
         self.plot_stream_drift(
             positions=self.positions,

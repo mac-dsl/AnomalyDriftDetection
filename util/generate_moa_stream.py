@@ -1,5 +1,5 @@
 from util.plot_stream import get_arff_data_labels
-from util.create_drift import get_split_index
+from util.create_drift import get_split_index, get_stream_cuts
 import numpy as np
 import os
 import pandas as pd
@@ -15,7 +15,9 @@ class GenMOAStream:
     #  @param moa_path: string, filepath to MOA executable
     #  @attr selected_streams: list of string, arff filenames of source streams
     #  @attr max_stream: int, max stream index (ex. for 6 streams, index 5 is max)
-    def __init__(self, source_dir, num_streams, drift_dir, moa_path):
+    def __init__(
+            self, source_dir, drift_dir, moa_path, num_streams=6, selected_streams=None
+    ):
         """
         Constructor method for drift generation object
         """
@@ -23,12 +25,16 @@ class GenMOAStream:
         self.drift_dir = drift_dir
         self.moa_path = moa_path
 
-        # Randomly select files to be used to create drift stream
-        files = os.listdir(source_dir)
-        files = [f for f in files if f.split('.')[-1] == 'arff']
-        selected_streams = np.random.choice(files, (num_streams,)).tolist()
-        self.selected_streams = selected_streams
-        self.max_stream = len(self.selected_streams) - 1
+        if selected_streams is None:
+            # Randomly select files to be used to create drift stream
+            files = os.listdir(source_dir)
+            files = [f for f in files if f.split('.')[-1] == 'arff']
+            selected_streams = np.random.choice(files, (num_streams,)).tolist()
+            self.selected_streams = selected_streams
+            self.max_stream = len(self.selected_streams) - 1
+        else:
+            self.selected_streams = selected_streams
+            self.max_stream = len(selected_streams) - 1
 
         # Locate anomalies for all streams and record them within a
         # master list
@@ -50,6 +56,7 @@ class GenMOAStream:
     #  @param n_drift: int, target number of drift sequences
     #  @param p_before: float, target percent of drift coming before anomaly
     #  @param sub_dir: string, name of subdirectory to export drift stream
+    #  @param dataset: string, descriptor (name) or source dataset for identification
     #  @Returns output_path, drift_label, positions, streams, seq_before
     def run_generate_grad_stream_moa(
         self, length, p_drift, n_drift, p_before, sub_dir, dataset
@@ -58,18 +65,92 @@ class GenMOAStream:
         Create new gradual drift-injected stream using MOA based on parameters
         """
         print('Generating splits...')
-        streams, positions, w_drift, stream_cuts, seq_before = \
+        streams, positions, w_drift, seq_before = \
             get_split_index(
-                            length,
-                            p_drift,
-                            n_drift,
-                            p_before,
-                            self.max_stream,
-                            self.total_anom_ints
+                length, p_drift, n_drift, p_before, self.max_stream, self.total_anom_ints
             )
         print('Done!')
 
+        output_path, drift_label = self.assemble_drift_stream(
+            positions, streams, w_drift, seq_before, sub_dir, length, dataset
+        )
+
+        #  @Returns
+        #    output_path: string, path to file where generated data stream is exported to
+        #    drift_label: list of int, whether or not a point is labelled as drift
+        #    streams: list of int, denoting order of streams in combination
+        #    positions: list of int, center position of drift
+        #    seq_before: list of boolean indicating whether drift comes before or before anomaly
+
+        return output_path, drift_label, streams, positions, seq_before, w_drift
+
+    #  @param positions: list of int, center position of drift
+    #  @param streams: list of int, denoting order of streams in combination
+    #  @param w_drift: int, width of drift
+    #  @param seq_before: list of boolean indicating whether drift comes before or before anomaly
+    #  @param sub_dir: string, name of subdirectory to export drift stream
+    #  @param length: int, total length of new stream
+    #  @param dataset: string, descriptor (name) or source dataset for identification
+    #  @Returns output_path, drift_label
+    def assemble_drift_stream(
+            self, positions, streams, w_drift, seq_before, sub_dir, length, dataset
+    ):
+        """
+        Function to combine helper methods to create drift stream
+        """
+        print('Getting stream file cuts...', end='\t')
+        stream_cuts = get_stream_cuts(positions, seq_before, w_drift, streams, self.max_stream)
+        print('Done!')
+
         print('Creating intermediate files...', end='\t')
+        streams_intermed = self.create_intermediate_files(stream_cuts)
+        print('Done!')
+
+        print('Recursively generating MOA command...', end='\t')
+        drift_stream = self.generate_drift_stream_for_moa(
+            streams, positions, w_drift, streams_intermed
+        )
+        print('Done!')
+
+        output_path, filename = self.get_output_filepath(
+            w_drift, length, positions, seq_before, dataset, sub_dir
+        )
+        print('Drift filename: ', filename)
+
+        print('Running terminal command...', end='\t')
+        self.run_moa_command(drift_stream, length, output_path)
+        # Add information on stream construction to ARFF file as comments
+        self.add_stream_info(
+            output_path,
+            self.selected_streams,
+            streams,
+            positions,
+            w_drift,
+            seq_before
+        )
+        print('Done!')
+
+        print('Generating drift labels...', end='\t')
+        drift_label = self.get_drift_labels(positions, w_drift, length)
+        drift_label_df = pd.DataFrame(drift_label)
+        drift_label_df.to_csv(f'{self.drift_dir}/{sub_dir}/{filename}.csv')
+        print('Done!')
+
+        #  @Returns
+        #    output_path: string, path to file where generated data stream is exported to
+        #    drift_label: list of int, whether or not a point is labelled as drift
+
+        return output_path, drift_label
+
+    #  @param stream_cuts: list of list of int, indices to split intermediate
+    #                 ARFF files in the form [L_0, L_1, ... , L_{N-1}], where
+    #                 each L_i is a list of int
+    #  @Returns streams_intermed: list of string, list of cut stream segments
+    #                          in order of assembly to generate stream
+    def create_intermediate_files(self, stream_cuts):
+        """
+        Create intermediate files from source based on given indices to cut
+        """
         streams_intermed = []
         for i in range(len(self.selected_streams)):
             f = os.path.join(self.source_dir, self.selected_streams[i])
@@ -77,9 +158,29 @@ class GenMOAStream:
             int_dir = f"{self.drift_dir}/intermediate/"
             int_name = self.split_arff(f, split_index, 'intermed', int_dir)
             streams_intermed.append(int_name)
-        print('Done!')
+        return streams_intermed
 
-        print('Recursively generating MOA command...', end='\t')
+    #  @param drift_stream: list of string, list of cut stream segments
+    #                          in order of assembly to generate stream
+    #  @param length: int, total length of new stream
+    #  @param output_path: string, path to file where generated data stream is exported to
+    def run_moa_command(
+            self, drift_stream, length, output_path,
+    ):
+        command = self.generate_moa_command(drift_stream, length, output_path)
+        subprocess.run(command, shell=True)
+
+    #  @param streams: list of int, denoting order of streams in combination
+    #  @param positions: list of int, center position of drift
+    #  @param w_drift: int, width of drift
+    #  @Returns drift_stream: string, MOA representation of drift stream
+    #                     constructed according to given parameters
+    def generate_drift_stream_for_moa(
+            self, streams, positions, w_drift, streams_intermed
+    ):
+        """
+        Create MOA representation of drift stream based on given parameters
+        """
         moa_streams = []
         # Get proper order for respective segments from ARFF files
         for (i, s) in enumerate(streams):
@@ -95,44 +196,28 @@ class GenMOAStream:
             drift_stream = self.generate_grad_stream_from_stream(
                 drift_stream, moa_streams[i], positions[i-1], w_drift[i-1]
             )
+        return drift_stream
 
-        # Re-evaluate the true values for each parameter for file naming
+    #  @param w_drift: int, width of drift
+    #  @param length: int, total length of new stream
+    #  @param positions: list of int, center position of drift
+    #  @param seq_before: list of boolean indicating whether drift comes before or before anomaly
+    #  @param dataset: string, descriptor (name) or source dataset for identification
+    #  @param sub_dir: string, name of subdirectory to export drift stream
+    #  @Returns (output_path, filename): (string, string), output path for ARFF file and
+    #                                general filename without file extension
+    def get_output_filepath(
+            self, w_drift, length, positions, seq_before, dataset, sub_dir
+    ):
+        """
+        Evaluate true values for each parameter for file naming
+        """
         p_drift = sum(w_drift)/length*100
         n_drift = len(positions)
         p_before = sum(seq_before)/len(seq_before)*100
         filename = f"{dataset}_grad_p{int(p_drift)}_n{n_drift}_b{int(p_before)}"
-
         output_path = f'{self.drift_dir}/{sub_dir}/{filename}.arff'
-        command = self.generate_moa_command(drift_stream, output_path)
-        print('Done!')
-        print('Drift filename: ', filename)
-
-        print('Running terminal command...', end='\t')
-        subprocess.run(command, shell=True)
-        # Add information on stream construction to ARFF file as comments
-        self.add_stream_info(
-            f'{self.drift_dir}/{sub_dir}/{filename}.arff',
-            self.selected_streams,
-            streams,
-            positions,
-            seq_before
-        )
-        print('Done!')
-
-        print('Generating drift labels...', end='\t')
-        drift_label = self.get_drift_labels(positions, w_drift, length)
-        drift_label_df = pd.DataFrame(drift_label)
-        drift_label_df.to_csv(f'{self.drift_dir}/{sub_dir}/{filename}.csv')
-        print('Done!')
-
-        #  @Returns
-        #    output_path: string, path to file where generated data stream is exported to
-        #    drift_label: list of int, whether or not a point is labelled as drift
-        #    streams: list of int, denoting order of streams in combination
-        #    positions: list of int, center position of drift
-        #    seq_before: list of boolean indicating whether drift comes before or before anomaly
-
-        return output_path, drift_label, streams, positions, seq_before
+        return output_path, filename
 
     #  @param y: ndarray of shape (N,) corresponding to anomaly labels
     #  @Return list of lists denoting anomaly intervals in the form [start, end)
@@ -237,13 +322,13 @@ class GenMOAStream:
     #  @param moa_file_path: String, path to execute moa
     #  @param stream: String representing stream to be generated
     #  @Return string, command to run MOA through command line
-    def generate_moa_command(self, stream, output_path):
+    def generate_moa_command(self, stream, length, output_path):
         """
         Generate command to run with MOA CLI to create gradual stream
         """
         command_p1 = f'cd {self.moa_path} && java -cp moa.jar -javaagent:sizeofag-1.0.4.jar'
         command_p2 = \
-            f'moa.DoTask "WriteStreamToARFFFile  -s ({stream}) -f {output_path} -m {self.length}"'
+            f'moa.DoTask "WriteStreamToARFFFile  -s ({stream}) -f {output_path} -m {length}"'
         return f'{command_p1} {command_p2}'
 
     #  @param stream_1: String, first stream in drift
@@ -300,14 +385,9 @@ class GenMOAStream:
         Returns drift labels of dataset, where 0 indicates no drift and 1
         indicates drift
         """
-        n_0 = positions[0] - w_drift[0]//2
-        drift_label = n_0 * [0] + w_drift[0] * [1]
-        for i in range(1, len(positions)):
-            p_prev, p_curr = positions[i-1], positions[i]
-            w_prev, w_curr = w_drift[i-1], w_drift[i]
-            n_0 = p_curr - p_prev - w_prev // 2 - w_curr // 2
-            drift_label += n_0 * [0] + w_curr * [1]
-        drift_label += [0] * (length - len(drift_label))
+        drift_label = [0 for _ in range(length)]
+        for (p, w) in list(zip(positions, w_drift)):
+            drift_label[int(p - w/2):int(p + w/2)] = [1] * w
         return drift_label
 
     #  @param filepath: string, filepath to ARFF file to append info to
@@ -317,13 +397,14 @@ class GenMOAStream:
     #  @param seq_before: list of boolean, sequence showing relative
     #             position of drift with respect to anomaly
     def add_stream_info(
-        self, filepath, source_files, streams, positions, seq_before
+        self, filepath, source_files, streams, positions, w_drift, seq_before
     ):
         stream_info = ['%  Source Streams:']
         n = len(source_files)
         stream_info += [f'%    {i}:{source_files[i]}' for i in range(n)]
         stream_info.append(f'%  Stream Order: {streams}')
         stream_info.append(f'%  Drift Positions: {positions}')
+        stream_info.append(f'%  Drift Widths: {w_drift}')
         stream_info.append(f'%  Drift Before: {seq_before}')
         with open(filepath, 'r+') as f:
             stream_data = f.read()
