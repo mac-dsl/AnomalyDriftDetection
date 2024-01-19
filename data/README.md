@@ -69,8 +69,6 @@ Datasets found under the `synthetic` subdirectory are datasets that have been ge
 
 where dataset refers to the source benchmark dataset for the stream, drift type refers to gradual (grad) or abrupt (abr) and percentage drift, number of drifts, and percentage before are as described in the report.
 
-**Note:** Current files may show with the naminng `a` instead of `b` to denote the percentage of drift which comes after anomalies. This will be refactored with changes to the code.
-
 
 ## Drift Stream Generation
 
