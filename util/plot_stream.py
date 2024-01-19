@@ -207,8 +207,9 @@ class PlotStream:
         Plot all source streams and drift stream between an interval
         """
         end = min(end, self.length)
+        start = max(0, start)
         rows = len(self.source_streams) + 1
-        fig, ax = plt.subplots(rows, 1, figsize=(10, 2.5*rows), sharey=True)
+        fig, ax = plt.subplots(rows, 1, figsize=(10, 2.5*rows), sharey=True, sharex=True)
 
         # for each source stream, plot stream and background colour
         for (i, s) in enumerate(self.source_streams):
