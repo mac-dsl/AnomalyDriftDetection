@@ -155,7 +155,7 @@ class GenMOAStream:
         for i in range(len(self.selected_streams)):
             f = os.path.join(self.source_dir, self.selected_streams[i])
             split_index = stream_cuts[i]
-            int_dir = f"{self.drift_dir}/intermediate/"
+            int_dir = f"{self.drift_dir}/intermediate"
             int_name = self.split_arff(f, split_index, 'intermed', int_dir)
             streams_intermed.append(int_name)
         return streams_intermed
@@ -281,10 +281,10 @@ class GenMOAStream:
         - File n contains points from index range [index_{n-1}, index_n) for 0 < n < N
         - File N contains points from index range [index_N - 1, file_length)
         """
-        file = filepath.split('/')[-1]
+        f = filepath.split('/')[-1]
         if output_dir is None:
-            output_dir = filepath[:-len(file)]
-        filename = file.split('.arff')[0]
+            output_dir = filepath[:-len(f)]
+        filename = f.split('.arff')[0]
 
         content = []
         output_files = []
@@ -311,7 +311,7 @@ class GenMOAStream:
                 output_file.writelines(header_lines + data)
             output_files.append(output_file_name)
         data = content[indices[-1]+7:]
-        output_file_name = f"{output_dir}{filename}_{split_name}_{len(indices)}.arff"
+        output_file_name = f"{output_dir}/{filename}_{split_name}_{len(indices)}.arff"
 
         # Write the data to a new file
         with open(output_file_name, 'w') as output_file:
