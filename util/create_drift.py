@@ -64,7 +64,7 @@ def find_anomaly_intervals(y):
 #  @param p_before: float, target percent of drift coming before anomaly
 #  @param max_stream: int, maximum stream index
 #                 (ex. for 6 streams, stream index 5 is max)
-#  @param total_anoms: list of tuple of (int, [int, int]),
+#  @param total_anom_ints: list of tuple of (int, [int, int]),
 #      Represents (stream, [start, end]) for anomaly intervals across all
 #      streams ordered by start position
 #  @Returns streams, positions, w_drift, stream_cuts, seq_before
@@ -113,6 +113,72 @@ def get_split_index(
         positions.append(drift_pos)
 
     print('\tGetting stream file cuts...')
+
+    #  @Returns
+    #    streams: list of int, denoting order of streams in combination
+    #    positions: list of int, center position of drift
+    #    w_drift: list of int, width of each drift
+    #    stream_cuts: list of list of int, where to cut each source arff file
+    #    seq_before: list of boolean indicating relative drift position
+
+    return streams, positions, w_drift, seq_before
+
+
+#  @param length: int, total length of new stream
+#  @param p_drift: float, target percentage of drift
+#  @param n_drift: int, target number of drift sequences
+#  @param p_before: float, target percent of drift coming before anomaly
+#  @param max_stream: int, maximum stream index
+#                 (ex. for 6 streams, stream index 5 is max)
+#  @param total_anom_ints: list of tuple of (int, [int, int]),
+#      Represents (stream, [start, end]) for anomaly intervals across all
+#      streams ordered by start position
+#  @Returns streams, positions, w_drift, stream_cuts, seq_before
+def get_split_index_uniform(
+        length,
+        p_drift,
+        n_drift,
+        p_before,
+        max_stream,
+        total_anom_ints
+        ):
+    """
+    Function to indices to cut source arff files to combine, in more uniformly
+    with respect to position and width
+    """
+    # Find equally spaced anomalies within length of total data stream
+    N = len(total_anom_ints)
+    valid_anoms = \
+        [ai for ai in total_anom_ints if (ai[1][0] + ai[1][1])/2 < length]
+    end = len(valid_anoms) - (n_drift + 1)
+    p_anoms = [(i, valid_anoms[i]) for i in range(0, end, N // n_drift)]
+
+    # Populate values for drift
+    width = int(p_drift * length / n_drift)
+    streams = [random.randint(0, max_stream)]
+    positions = [0]
+    seq_before = get_seq_before(p_before, n_drift)
+    for (before, p_anom) in list(zip(seq_before, p_anoms)):
+        p_vals = p_anom[1]
+        j = 1
+        try:
+            while (streams[-1] == p_vals[0]) or \
+                (p_vals[1][0] - positions[-1] < width * 1.05):
+                    p_anom = (j, valid_anoms[p_anom[0] + j])
+                    j += 1
+        except:
+            pass
+        else:
+            streams.append(p_vals[0])
+            if before:
+                positions.append(p_vals[1][0])
+            else:
+                positions.append(p_vals[1][0])
+
+    # Ensure correct length of final variables
+    positions = positions[1:]
+    w_drift = [width] * len(positions)
+    seq_before = seq_before[:len(positions)]
 
     #  @Returns
     #    streams: list of int, denoting order of streams in combination

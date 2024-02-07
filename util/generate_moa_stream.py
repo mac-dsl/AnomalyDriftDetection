@@ -1,8 +1,9 @@
 from util.plot_stream import get_arff_data_labels
-from util.create_drift import get_split_index, get_stream_cuts
+from util.create_drift import get_split_index, get_split_index_uniform, get_stream_cuts
 import numpy as np
 import os
 import pandas as pd
+import random
 import subprocess
 import sys
 
@@ -29,8 +30,8 @@ class GenMOAStream:
             # Randomly select files to be used to create drift stream
             files = os.listdir(source_dir)
             files = [f for f in files if f.split('.')[-1] == 'arff']
-            selected_streams = np.random.choice(files, (num_streams,)).tolist()
-            self.selected_streams = selected_streams
+            selected_streams = np.random.choice(files, (num_streams,), replace=False)
+            self.selected_streams = selected_streams.tolist()
             self.max_stream = len(self.selected_streams) - 1
         else:
             self.selected_streams = selected_streams
@@ -57,18 +58,27 @@ class GenMOAStream:
     #  @param p_before: float, target percent of drift coming before anomaly
     #  @param sub_dir: string, name of subdirectory to export drift stream
     #  @param dataset: string, descriptor (name) or source dataset for identification
+    #  @param mode: int, indicator for drift assembly method, options {0,1}, default 0
+    #           Mode 0: variable drift widths and positions
+    #           Mode 1: uniform drift widths and positions (helpful for high p_drift)
     #  @Returns output_path, drift_label, positions, streams, seq_before
     def run_generate_grad_stream_moa(
-        self, length, p_drift, n_drift, p_before, sub_dir, dataset
+        self, length, p_drift, n_drift, p_before, sub_dir, dataset, mode=0
     ):
         """
         Create new gradual drift-injected stream using MOA based on parameters
         """
         print('Generating splits...')
-        streams, positions, w_drift, seq_before = \
-            get_split_index(
-                length, p_drift, n_drift, p_before, self.max_stream, self.total_anom_ints
-            )
+        if mode == 0:
+            streams, positions, w_drift, seq_before = \
+                get_split_index(
+                    length, p_drift, n_drift, p_before, self.max_stream, self.total_anom_ints
+                )
+        else:
+            streams, positions, w_drift, seq_before =\
+                get_split_index_uniform(
+                    length, p_drift, n_drift, p_before, self.max_stream, self.total_anom_ints
+                )
         print('Done!')
 
         output_path, drift_label = self.assemble_drift_stream(
@@ -141,7 +151,7 @@ class GenMOAStream:
         #    drift_label: list of int, whether or not a point is labelled as drift
 
         return output_path, drift_label
-
+    
     #  @param stream_cuts: list of list of int, indices to split intermediate
     #                 ARFF files in the form [L_0, L_1, ... , L_{N-1}], where
     #                 each L_i is a list of int
@@ -181,6 +191,10 @@ class GenMOAStream:
         """
         Create MOA representation of drift stream based on given parameters
         """
+        N = len(positions)
+        streams = streams[:N+1]
+        w_drift = w_drift[:N]
+
         moa_streams = []
         # Get proper order for respective segments from ARFF files
         for (i, s) in enumerate(streams):
