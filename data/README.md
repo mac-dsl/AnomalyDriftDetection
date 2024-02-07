@@ -56,6 +56,7 @@ For the following steps, values indicated within `<>` brackets are to be replace
 3) Create an environment using Python 3.8.18 in conda by running the following command: `conda create -n <myenv> python=3.8.18` (replacing `<myenv>` with your chosen name for the environment).
 4) Activate the conda environment created in the previous step (`conda activate <myenv>`). Install the packages in `requirements.txt` using pip (`pip install -r requirements.txt`).
 5) Install `ipykernel` to use the environment with Jupyter Notebooks by running `conda install -c anaconda ipykernel`. Run `python -m ipykernel install --user --name=<myenv>` to install a notebook kernel using this enviornment.
+6) Download [MOA](https://moa.cms.waikato.ac.nz/) locally and copy it to the server (ex. `scp -r moa-release-2023.04.0 <macid>@zurich.cas.mcmaster.ca:moa-release-2023.04.0`).
 
 After completing these steps, you should be able to open one of the notebooks listed above and select the kernel that you just created to run the code.
 
