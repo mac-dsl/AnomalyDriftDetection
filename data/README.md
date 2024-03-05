@@ -2,14 +2,14 @@
 
 
 ## Table of Contents
-1. [Overview](##overview)
-2. [Background](##background)
-3. [Directory Organization](##dir-organization)
-4. [Environment Set-Up](##env-setup)
-5. [Datasets](##datasets)
-6. [Drift Stream Generation](##drift-stream-gen)
-7. [Common Issues in Debugging](##common-issues)
-8. [References](##references)
+1. [Overview](#overview)
+2. [Background](#background)
+3. [Directory Organization](#dir-organization)
+4. [Environment Set-Up](#env-setup)
+5. [Datasets](#datasets)
+6. [Drift Stream Generation](#drift-stream-gen)
+7. [Common Issues in Debugging](#common-issues)
+8. [References](#references)
 
 
 <a name="overview"></a>
@@ -75,7 +75,7 @@ The files in this repository that relevant for dataset generation have been list
 ├── view_drift.ipynb
 └── requirements.txt
 ```
- The `data` directory contains the source and generated datasets for this repository. More details can be found in the **Datasets** section.
+ The `data` directory contains the source and generated datasets for this repository. More details can be found in the [Datasets](#dataset) section.
 
  The `util` directory contains source code for scripts that are used to help generate drift. The files are detailed in the following table:
 | File                   | Purpose                                   |
@@ -121,7 +121,7 @@ Datasets found under the `synthetic` subdirectory are datasets that have been ge
 {dataset}_{drift type}_p{percentage drift}_n{number of drifts}_b{percentage before}.arff
 ```
 
-where dataset refers to the source benchmark dataset for the stream, drift type refers to gradual (grad) or abrupt (abr) and percentage drift, number of drifts, and percentage before as described in the [Background](##background) section.
+where dataset refers to the source benchmark dataset for the stream, drift type refers to gradual (grad) or abrupt (abr) and percentage drift, number of drifts, and percentage before as described in the [Background](#background) section.
 
 
 <a name="drift-stream-gen"></a>
