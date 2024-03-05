@@ -35,7 +35,7 @@ The primary and secondary stream each indicate a concept of time-series data suc
 
 A **drift stream** is defined as a generated data stream which consists of one or more drifts. 
 
-### Drift Stream Generation Algorithm
+### Drift Stream Parameters
 
 When generating a drift stream using our methods, several parameters can be defined which have been described in the following table:
 
@@ -46,9 +46,9 @@ When generating a drift stream using our methods, several parameters can be defi
 | $P_{d}$   | percentage of drift            | 5, 20, **35**, 50, 65, 80        |
 | $P_{before}$ | percentage of drift occurring before anomalies (\%) | 0, 25, **50**, 75, 100      |
 
-The length ($L$) of the drift stream is the number of data points (time units) that comprise the stream. The number of drifts ($N_{d}$) denotes how many drifts there are in a drift stream. During drift generation, this is selected based on the desired proportion of anomalies affected by drift ($N_{d,ak}$ for $k$ target affected anomalies). For example, for a data stream which has a total of 200 anomalies, to inject drift surrounding 20\% of the anomalies would correspond to $N_d = N_{d,a20\%} = 40$. Similarly, to inject drift surrounding 30\% of the anomalies for the same data stream, a user would specify $N_d = N_{d,a30\%} = 60$. The percentage of drift refers to the percentage of data points in a stream that are classified as drift, or the sum of all transition periods of gradual drifts. For a stream containing $L$ data points and $N_d$ drifts of varying widths $w_{i}$, the percentage of drift $P_{d}$ can be represented by $$P_{d} = \frac {\sum^{N_{d}}_{i=1} w_{i}}{L} \times 100\%$$. 
+The length ($L$) of the drift stream is the number of data points (time units) that comprise the stream. The number of drifts ($N_{d}$) denotes how many drifts there are in a drift stream. During drift generation, this is selected based on the desired proportion of anomalies affected by drift ($N_{d,ak}$ for $k$\% target affected anomalies). For example, for a data stream which has a total of 200 anomalies, to inject drift surrounding 20\% of the anomalies would correspond to $N_d = N_{d,a20\%} = 40$. Similarly, to inject drift surrounding 30\% of the anomalies for the same data stream, a user would specify $N_d = N_{d,a30\%} = 60$. The percentage of drift refers to the percentage of data points in a stream that are classified as drift, or the sum of all transition periods of gradual drifts. For a stream containing $L$ data points and $N_d$ drifts of varying widths $w_{i}$, the percentage of drift $P_{d}$ can be represented by $P_{d} = \frac {\sum^{N_{d}}_{i=1} w_{i}}{L} \times 100\%$. 
 
-Percentage of drift before an anomaly measures the number of injected drifts that have been positioned before and within the neighbourhood of an anomaly. For this work, we generate drift before an anomaly by selecting a position to inject drift which is within $\frac{w}{2}$ time units before an anomaly occurs. For a stream containing $N_{d}$ drifts and $N_{before}$ drifts occurring before anomalies, the percentage of drift before an anomaly ($P_{before}$) can be represented by $$P_{before} = \frac{N_{before}}{N_{d}} \times 100\%$$.
+Percentage of drift before an anomaly measures the number of injected drifts that have been positioned before and within the neighbourhood of an anomaly. For this work, we generate drift before an anomaly by selecting a position to inject drift which is within $\frac{w}{2}$ time units before an anomaly occurs. For a stream containing $N_{d}$ drifts and $N_{before}$ drifts occurring before anomalies, the percentage of drift before an anomaly ($P_{before}$) can be represented by $P_{before} = \frac{N_{before}}{N_{d}} \times 100\%$.
 
 
 <a name="dir-organization"></a>
@@ -75,7 +75,7 @@ The files in this repository that relevant for dataset generation have been list
 ├── view_drift.ipynb
 └── requirements.txt
 ```
- The `data` directory contains the source and generated datasets for this repository. More details can be found in the [Datasets](#dataset) section.
+ The `data` directory contains the source and generated datasets for this repository. More details can be found in the [Datasets](#datasets) section.
 
  The `util` directory contains source code for scripts that are used to help generate drift. The files are detailed in the following table:
 | File                   | Purpose                                   |
@@ -128,7 +128,14 @@ where dataset refers to the source benchmark dataset for the stream, drift type 
 
 ## Drift Stream Generation
 
-The method for drift stream generation has been documented in the `datageneration` section of the paper. The modules used to generate drift streams can be described by the following diagram:
+The method for drift stream generation can be explained in the following series of steps: 
+
+1. Convert existing dataset to ARFF file format.
+2. Identify the pool of data streams within the dataset to use as source streams.
+3. Identify parameters for desired drift. Note: the current implementation for the algorithm is biased towards producing streams with reduced values compared to the target. For example, when specifying a target percentage drift of 50%, the method may return a stream with 34% drift. To account for this, it is recommended to run the current method with higher values for target parameters and assessing the true values.
+4. Run the script for generating and running the MOA command ([`generate_moa_stream.py`](../util/generate_moa_stream.py)) or run the functions individually using a Jupyter Notebook ([`moa_drift_generation.ipynb`](../moa_drift_generation.ipynb)).
+
+The modules used to generate drift streams can be described by the following diagram:
 
 ![Architectural diagram of drift stream generation method](figures/architecture_diagram.png)
 
