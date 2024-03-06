@@ -33,6 +33,8 @@ The primary and secondary stream each indicate a concept of time-series data suc
 ![datagen_fig2a](figures/datagen_fig2a.png)
 ![datagen_fig2b](figures/datagen_fig2b.png)
 
+Drift can be classified by type as abrupt or gradual, based on the width of the transition period. An abrupt drift occurs when the transition between two concepts is instantaneous. In MOA, an abrupt drift can be created by setting the width of the drift to 1. A gradual drift occurs when the transition between two concepts spans across a period of time. In MOA, a gradual drift can be created by setting the width of the drift greater than 1.
+
 A **drift stream** is defined as a generated data stream which consists of one or more drifts. 
 
 ### Drift Stream Parameters
