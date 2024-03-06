@@ -52,6 +52,9 @@ The length ($L$) of the drift stream is the number of data points (time units) t
 
 Percentage of drift before an anomaly measures the number of injected drifts that have been positioned before and within the neighbourhood of an anomaly. For this work, we generate drift before an anomaly by selecting a position to inject drift which is within $\frac{w}{2}$ time units before an anomaly occurs. For a stream containing $N_{d}$ drifts and $N_{before}$ drifts occurring before anomalies, the percentage of drift before an anomaly ($P_{before}$) can be represented by: $$P_{before} = \frac{N_{before}}{N_{d}} \times 100\%$$
 
+An example of a drift stream with 6 drifts and 6 source streams can be seen in the figure below.
+![datagen_fig2b](figures/datagen_fig3.png)
+
 
 <a name="dir-organization"></a>
 
