@@ -16,7 +16,7 @@
 
 ## Overview
 
-This README documents the organization of files and methods used to generate the datasets for this repository.
+This README documents the organization of files and methods used to generate drift streams using the code in this repository.
 
 
 <a name="background"></a>
@@ -35,7 +35,9 @@ The primary and secondary stream each indicate a concept of time-series data suc
 
 Drift can be classified by type as abrupt or gradual, based on the width of the transition period. An abrupt drift occurs when the transition between two concepts is instantaneous. In MOA, an abrupt drift can be created by setting the width of the drift to 1. A gradual drift occurs when the transition between two concepts spans across a period of time. In MOA, a gradual drift can be created by setting the width of the drift greater than 1.
 
-A **drift stream** is defined as a generated data stream which consists of one or more drifts. 
+A **drift stream** is defined as a generated data stream which consists of one or more drifts. An example of a drift stream with 6 drifts can be seen in the following figure.
+
+![datagen_fig2a](figures/datagen_fig3.png)
 
 ### Drift Stream Parameters
 
@@ -99,7 +101,7 @@ The following Notebook files are available to execute the above methods and demo
 
 ## Environment Set-Up
 
-The current working version of the code runs on Python 3.8.18. The requirements for running the notebooks in this directory can be found in the [`requirements.txt`](../requirements.txt) file. These can be installed on the Zurich server by the following the steps detailed below.
+The current working version of the code runs on Python 3.8.18. The requirements for running the notebooks in this directory can be found in the [`requirements.txt`](../requirements.txt) file. Set up for a Linux machine can be done by the following the steps detailed below.
 
 ### Setting up on Linux
 For the following steps, values indicated within `< >` brackets are to be replaced by the appropriate value.
