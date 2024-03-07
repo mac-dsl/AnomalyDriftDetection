@@ -102,15 +102,16 @@ The following Notebook files are available to execute the above methods and demo
 
 ## Environment Set-Up
 
-The current working version of the code runs on Python 3.8.18. The requirements for running the notebooks in this directory can be found in the [`requirements.txt`](../requirements.txt) file. These can be installed on the Zurich server by the following the steps detailed below.
+The current working version of the code runs on Python 3.8.18. The dependencies for running the notebooks in this directory can be found in the [`requirements.txt`](../requirements.txt) file. You can set up your computer to run our notebooks by the following the steps detailed below.
 
 ### Setting up on Linux
 For the following steps, values indicated within `< >` brackets are to be replaced by the appropriate value.
-1) Install conda if not already installed (ie. by [downloading the Linux installer](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html) and following the installation instructions from the download link).
-2) Create an environment using Python 3.8.18 in conda by running the following command: `conda create -n <myenv> python=3.8.18` (replacing `<myenv>` with your chosen name for the environment).
-3) Activate the conda environment created in the previous step (`conda activate <myenv>`). Install the packages in `requirements.txt` using pip (`pip install -r requirements.txt`).
-4) Install `ipykernel` to use the environment with Jupyter Notebooks by running `conda install -c anaconda ipykernel`. Run `python -m ipykernel install --user --name=<myenv>` to install a notebook kernel using this enviornment.
-5) Download [MOA](https://moa.cms.waikato.ac.nz/) if you have not already.
+1) Clone this repo by running `git clone https://github.com/mac-dsl/AnomalyDriftDetection.git`
+2) Install conda if not already installed (ie. by [downloading the Linux installer](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html) and following the installation instructions from the download link).
+3) Create an environment using Python 3.8.18 in conda by running the following command: `conda create -n <myenv> python=3.8.18` (replacing `<myenv>` with your chosen name for the environment).
+4) Activate the conda environment created in the previous step (`conda activate <myenv>`). Install the packages in `requirements.txt` using pip (`pip install -r requirements.txt`).
+5) Install `ipykernel` to use the environment with Jupyter Notebooks by running `conda install -c anaconda ipykernel`. Run `python -m ipykernel install --user --name=<myenv>` to install a notebook kernel using this enviornment.
+6) Download [MOA](https://moa.cms.waikato.ac.nz/) if you have not already.
 
 After completing these steps, you should be able to open one of the notebooks listed above and select the kernel that you just created to run the code.
 
