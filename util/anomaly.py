@@ -18,7 +18,6 @@ class CollectiveAnomaly:
         self.num_values = num_values
         self.skew = skew
 
-
 class CorrelationAnomaly:
     def __init__(self, percentage, min_noise, max_noise, correlation_min, correlation_max, correlation_step, length=20) -> None:
         self.min_noise = min_noise
@@ -29,15 +28,7 @@ class CorrelationAnomaly:
         self.correlation_step = correlation_step
         self.length = length
 
-
-# # injects point anomalies in the dataset, the fraction of anomalous data can be specified by the percentage parameter that the user can specify
-# class PointAnomaly:
-#     def __init__(self, percentage: float, possible_values: list[float] = None) -> None:
-#         # if possible values are not given, a set of possible values will be generated from the dataset as default
-#         self.possible_values = possible_values
-#         self.percentage = percentage
-
-
+# injects point anomalies; these deviate significantly from the rest of the data
 class PointAnomaly:
     def __init__(self, percentage: float, distribution: str = 'uniform', mu: float = None, std: float = None, num_values: int = 5, lowerbound=None, upperbound=None, skew=None) -> None:
         self.percentage = percentage
@@ -50,8 +41,6 @@ class PointAnomaly:
         self.upperbound = upperbound
 
 # injects sequential anomalies into the dataset (collective anomalies that keep repeating)
-
-
 class SequentialAnomaly:
     def __init__(self, percentage: float, noise_factor: int, start=None, end=None, length=15):
         self.length = length
