@@ -23,14 +23,13 @@ class Stream:
     def __init__(self, filepath) -> None:
         filename = filepath.split("/")[-1]
         self.path = "/".join(filepath.split("/")[:-1])
-        self.filename = "".join(filename.split(".")[:-1])
+        self.filename = ".".join(filename.split(".")[:-1])
         self.data = None
         self.anomaly_labels = None
         self.anomaly_intervals = None
 
         file_ext = filename.split(".")[-1].lower()
         if file_ext in {"csv", "out"}:
-            data = pd.read_csv(filepath, header=None)
             self.data, self.anomaly_labels = self.__get_csv_data_labels(filepath)
             self.drift_labels = self.__get_drift_labels()
             self.length = len(self.anomaly_labels)
@@ -57,6 +56,16 @@ class Stream:
         with open(arff_filename, "w") as output_file:
             output_file.writelines([header] + content)
         return arff_filename
+
+
+    def get_anomaly_intervals(self):
+        """
+        Return the intervals where there is an anomaly in the 
+        form of a list of tuples formatted as (start, end)
+        """
+        if self.anomaly_intervals is None:
+            self.__set_anomaly_intervals()
+        return self.anomaly_intervals
 
 
     #  @params start: int, start of interval to plot, default: 0
