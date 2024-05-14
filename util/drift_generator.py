@@ -1,20 +1,19 @@
-from util.plot_stream import get_arff_data_labels
 from util.create_drift import get_split_index, get_split_index_uniform, get_stream_cuts
+from util.stream import Stream
 import numpy as np
 import os
 import pandas as pd
-import random
 import subprocess
 import sys
 
 
-class GenMOAStream:
+class DriftGenerator:
 
     #  @param source_dir: string, filepath to directory containing source files
     #  @param num_streams: innt, number of files to consider in combination
     #  @param drift_dir: string, filepath to directory containinng output files
     #  @param moa_path: string, filepath to MOA executable
-    #  @attr selected_streams: list of string, arff filenames of source streams
+    #  @attr selected_streams: list of Stream, arff filenames of source streams
     #  @attr max_stream: int, max stream index (ex. for 6 streams, index 5 is max)
     def __init__(
             self, source_dir, drift_dir, moa_path, num_streams=6, selected_streams=None
@@ -31,7 +30,9 @@ class GenMOAStream:
             files = os.listdir(source_dir)
             files = [f for f in files if f.split('.')[-1] == 'arff']
             selected_streams = np.random.choice(files, (num_streams,), replace=False)
-            self.selected_streams = selected_streams.tolist()
+            self.selected_streams = []
+            for s in selected_streams:
+                self.selected_streams.append(Stream(f"{self.source_dir}/{s}"))
             self.max_stream = len(self.selected_streams) - 1
         else:
             self.selected_streams = selected_streams
@@ -40,16 +41,16 @@ class GenMOAStream:
         # Locate anomalies for all streams and record them within a
         # master list
         anom_ints = []
-        for s in selected_streams:
-            _, y = get_arff_data_labels(os.path.join(self.source_dir, s))
-            anom_ints.append(self.find_anomaly_intervals(y))
+        for s in self.selected_streams:
+            anom_ints.append(s.get_anomaly_intervals())
         self.total_anom_ints = self.get_total_anoms(anom_ints)
 
     #  @Return df: pandas dataframe, containing descriptive information on the
     #       source data (ie. number of anomalies, average anomaly length, etc)
     def get_source_summary(self):
         df = pd.read_csv(f"{self.source_dir}/description.csv")
-        df = df.loc[df.filename.apply(lambda x: x in self.selected_streams)]
+        selected_streams_names = [f"{s.filename}.arff" for s in self.selected_streams]
+        df = df.loc[df.filename.apply(lambda x: x in selected_streams_names)]
         return df
 
     #  @param length: int, total length of new stream
@@ -127,6 +128,9 @@ class GenMOAStream:
         )
         print('Drift filename: ', filename)
 
+        if not os.path.exists(f"{self.drift_dir}/{sub_dir}"):
+            os.makedirs(f"{self.drift_dir}/{sub_dir}")
+
         print('Running terminal command...', end='\t')
         self.run_moa_command(drift_stream, length, output_path)
         # Add information on stream construction to ARFF file as comments
@@ -162,8 +166,8 @@ class GenMOAStream:
         Create intermediate files from source based on given indices to cut
         """
         streams_intermed = []
-        for i in range(len(self.selected_streams)):
-            f = os.path.join(self.source_dir, self.selected_streams[i])
+        for i in range(self.max_stream + 1):
+            f = os.path.join(self.source_dir, f"{self.selected_streams[i].filename}.arff")
             split_index = stream_cuts[i]
             int_dir = f"{self.drift_dir}/intermediate"
             int_name = self.split_arff(f, split_index, 'intermed', int_dir)
@@ -233,32 +237,6 @@ class GenMOAStream:
         output_path = f'{self.drift_dir}/{sub_dir}/{filename}.arff'
         return output_path, filename
 
-    #  @param y: ndarray of shape (N,) corresponding to anomaly labels
-    #  @Return list of lists denoting anomaly intervals in the form [start, end)
-    def find_anomaly_intervals(self, y):
-        """
-        Method to find the intervals where there is an anomaly
-        """
-        change_indices = np.where(np.diff(y) != 0)[0]
-        if len(change_indices) == 0:
-            return []
-        anom_intervals = []
-
-        if y[change_indices[0]] == 0:
-            i = 0
-        else:
-            i = 1
-            anom_intervals.append([0, change_indices[0]+1])
-
-        while i + 1 < len(change_indices):
-            anom_intervals.append([change_indices[i]+1, change_indices[i+1]+1])
-            i += 2
-
-        if y[-1] == 1:
-            anom_intervals.append([change_indices[-1]+1, len(y)])
-
-        return anom_intervals
-
     #  @param anom_ints: list of list of int, anomaly intervals [start, end] of
     #                 input streams
     #  @Return total_anoms: list of tuple of (int, [int, int]),
@@ -312,6 +290,10 @@ class GenMOAStream:
                     content.append(newline)
                 else:
                     content.append(line)
+
+        # Create output directory if does not exists
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
 
         # Save the header information to write to each new split file
         header_lines = content[:7]
@@ -415,7 +397,7 @@ class GenMOAStream:
     ):
         stream_info = ['%  Source Streams:']
         n = len(source_files)
-        stream_info += [f'%    {i}:{source_files[i]}' for i in range(n)]
+        stream_info += [f'%    {i}:{source_files[i].filename}.arff' for i in range(n)]
         stream_info.append(f'%  Stream Order: {streams}')
         stream_info.append(f'%  Drift Positions: {positions}')
         stream_info.append(f'%  Drift Widths: {w_drift}')

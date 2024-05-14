@@ -71,10 +71,9 @@ The files in this repository that relevant for dataset generation have been list
 │       ├── p_drift
 │       └── n_drift
 ├── util
-│   ├── convert2arff.py
 │   ├── create_drift.py
-│   ├── generate_moa_stream.py
-│   └── plot_stream.py
+│   ├── drift_generator.py
+│   └── stream.py
 ├── moa_drift_generation.ipynb
 ├── view_drift.ipynb
 └── requirements.txt
@@ -82,12 +81,11 @@ The files in this repository that relevant for dataset generation have been list
  The `data` directory contains the source and generated datasets for this repository. More details can be found in the [Datasets](#datasets) section.
 
  The `util` directory contains source code for scripts that are used to help generate drift. The files are detailed in the following table:
-| File                   | Purpose                                   |
-|------------------------|-------------------------------------------|
-| `convert2arff.py`        | Convert .out files to .arff               |
+| File                     | Purpose                                   |
+|--------------------------|-------------------------------------------|
 | `create_drift.py`        | Helper functions to create drift          |
-| `generate_moa_stream.py` | Class to create drift streams and run MOA |
-| `plot_stream.py`         | Class to plot drift stream                |
+| `drift_generator.py`     | Class to create drift streams and run MOA |
+| `stream.py`              | Class defining data streams               |
 
 
 The following Notebook files are available to execute the above methods and demonstrate their use:
