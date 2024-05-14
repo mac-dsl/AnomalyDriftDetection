@@ -27,9 +27,7 @@ class createAnomalyIntervals:
             starting_points.append(evenly_spaced[i]+(gap_size/2))
         for i in range(0, len(starting_points)):
             points.append((starting_points[i], ending_points[i]))
-            # print(ending_points[i] - starting_points[i])
         self.points = points
-        # print(points)
 
     def add_anomalies(self, *anomaly_modules):
         if len(anomaly_modules) != len(self.points):
@@ -66,7 +64,6 @@ class createAnomalyIntervals:
                     "Wrong type of input parameter, must be anomaly modules.")
 
     # adds point anomalies within specified intervals
-
     def add_Point_Anomaly(self, start: int, end: int, percentage: float, possible_values: list[float] = None) -> None:
         insertion_indexes = np.random.choice(
             np.arange(start, end), int(percentage*(end-start)))
@@ -90,9 +87,6 @@ class createAnomalyIntervals:
             possible_values = possible_values - min(possible_values)
             possible_values = possible_values / max(possible_values)
             possible_values = possible_values * upperbound
-            # plotting histogram for debugging
-            # plt.hist(possible_values, 30, density=True, color='red', alpha=0.1)
-            # plt.show()
 
         elif distribution == 'gaussian':
             possible_values = np.random.normal(mu, std, num_values)
@@ -100,26 +94,17 @@ class createAnomalyIntervals:
             raise ValueError(
                 'Wrong distribution specification. Please enter either uniform, skew, or gaussian')
 
-        # indexes where the anomaly will be inserted
-        # print(possible_values)
         insertion_indexes = np.random.choice(
             np.arange(start, end-1), int(percentage*(end-start)))
-        # print("insertion indexes:")
-        # print(insertion_indexes)
 
         for index in insertion_indexes:
-            # print(index)
-            # setting the anomaly
             self.dataset.iloc[int(
                 index), 0] += self.dataset.iloc[int(index), 0] * np.random.choice(possible_values)
-            # setting the label as anomalous
             self.dataset.iloc[int(index), 1] = 1
 
     def add_Collective_Anomaly(self, start: int, end: int, length: int, percentage: float, distribution, mu, std, num_values, upperbound, lowerbound, skew):
 
         number_anomalies = math.ceil(((end-start)/length)*percentage)
-        # print("number of anomalies")
-        # print(number_anomalies)
 
         if mu == None:
             mu = self.dataset[int(start):int(end)].mean() * 3
