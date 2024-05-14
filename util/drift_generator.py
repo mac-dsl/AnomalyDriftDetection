@@ -48,6 +48,10 @@ class DriftGenerator:
     #  @Return df: pandas dataframe, containing descriptive information on the
     #       source data (ie. number of anomalies, average anomaly length, etc)
     def get_source_summary(self):
+        """
+        Retrieve summary information on the dataset, requires a file named description.csv in the same directory of the source files containing attributes: 
+        filename, length, number of anomalies, total anomaly coverage, average anomaly length, percentage of anomalies
+        """
         df = pd.read_csv(f"{self.source_dir}/description.csv")
         selected_streams_names = [f"{s.filename}.arff" for s in self.selected_streams]
         df = df.loc[df.filename.apply(lambda x: x in selected_streams_names)]
