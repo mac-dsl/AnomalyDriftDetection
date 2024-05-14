@@ -17,47 +17,6 @@ def get_next_stream(curr_stream, max_stream=5):
     return next_stream
 
 
-#  @param filename: string, filename of arff data source
-#  @Return X, y: ndarrays corresponding to data (N, 1) and labels (N,)
-#              from arff data
-def get_arff_data_labels(filename):
-    """
-    Find ndarray corresponding to data and labels from arff data
-    """
-    arff_content = arff.load(f.replace(',\n', '\n') for f in open(filename, 'r'))
-    data = arff_content['data']
-    X = np.array([i[:1] for i in data])
-    y = np.array([i[-1] for i in data])
-    return X.astype(float), y.astype(float)
-
-
-#  @param y: ndarray of shape (N,) corresponding to anomaly labels
-#  @Return list of lists denoting anomaly intervals in the form [start, end)
-def find_anomaly_intervals(y):
-    """
-    Method to find the intervals where there is an anomaly
-    """
-    change_indices = np.where(np.diff(y) != 0)[0]
-    if len(change_indices) == 0:
-        return []
-    anom_intervals = []
-
-    if y[change_indices[0]] == 0:
-        i = 0
-    else:
-        i = 1
-        anom_intervals.append([0, change_indices[0]+1])
-
-    while i + 1 < len(change_indices):
-        anom_intervals.append([change_indices[i]+1, change_indices[i+1]+1])
-        i += 2
-
-    if y[-1] == 1:
-        anom_intervals.append([change_indices[-1]+1, len(y)])
-
-    return anom_intervals
-
-
 #  @param length: int, total length of new stream
 #  @param p_drift: float, target percentage of drift
 #  @param n_drift: int, target number of drift sequences
