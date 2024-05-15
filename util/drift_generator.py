@@ -1,5 +1,5 @@
 from util.create_drift import get_split_index, get_split_index_uniform, get_stream_cuts
-from util.stream import Stream
+from util.stream import Stream, DriftStream
 import numpy as np
 import os
 import pandas as pd
@@ -66,10 +66,10 @@ class DriftGenerator:
     #  @param mode: int, indicator for drift assembly method, options {0,1}, default 0
     #           Mode 0: variable drift widths and positions
     #           Mode 1: uniform drift widths and positions (helpful for high p_drift)
-    #  @Returns output_path, drift_label, positions, streams, seq_before
+    #  @Returns drift_stream
     def run_generate_grad_stream_moa(
         self, length, p_drift, n_drift, p_before, sub_dir, dataset, mode=0
-    ):
+    ) -> DriftStream:
         """
         Create new gradual drift-injected stream using MOA based on parameters
         """
@@ -86,18 +86,13 @@ class DriftGenerator:
                 )
         print('Done!')
 
-        output_path, drift_label = self.assemble_drift_stream(
+        output_path = self.assemble_drift_stream(
             positions, streams, w_drift, seq_before, sub_dir, length, dataset
         )
 
-        #  @Returns
-        #    output_path: string, path to file where generated data stream is exported to
-        #    drift_label: list of int, whether or not a point is labelled as drift
-        #    streams: list of int, denoting order of streams in combination
-        #    positions: list of int, center position of drift
-        #    seq_before: list of boolean indicating whether drift comes before or before anomaly
+        drift_stream = DriftStream(output_path, self.source_dir)
 
-        return output_path, drift_label, streams, positions, seq_before, w_drift
+        return drift_stream
 
     #  @param positions: list of int, center position of drift
     #  @param streams: list of int, denoting order of streams in combination
@@ -156,9 +151,8 @@ class DriftGenerator:
 
         #  @Returns
         #    output_path: string, path to file where generated data stream is exported to
-        #    drift_label: list of int, whether or not a point is labelled as drift
 
-        return output_path, drift_label
+        return output_path
     
     #  @param stream_cuts: list of list of int, indices to split intermediate
     #                 ARFF files in the form [L_0, L_1, ... , L_{N-1}], where
