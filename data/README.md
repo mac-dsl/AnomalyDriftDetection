@@ -75,7 +75,6 @@ The files in this repository that relevant for dataset generation have been list
 │   ├── drift_generator.py
 │   └── stream.py
 ├── moa_drift_generation.ipynb
-├── view_drift.ipynb
 └── requirements.txt
 ```
  The `data` directory contains the source and generated datasets for this repository. More details can be found in the [Datasets](#datasets) section.
@@ -92,7 +91,6 @@ The following Notebook files are available to execute the above methods and demo
 | File                       | Purpose                                  |
 |----------------------------|------------------------------------------|
 | `moa_drift_generation.ipynb` | Run functions to generate drift stream   |
-| `view_drift.ipynb`           | Plot generated drift streams             |
 
 
 <a name="env-setup"></a>
@@ -141,9 +139,9 @@ The modules used to generate drift streams can be described by the following dia
 
 ![Architectural diagram of drift stream generation method](figures/architecture_diagram.png)
 
-The functions used to process ARFF files can be found in [`convert2arff.py`](../util/convert2arff.py). The functions used to algorithmically combine source streams and generate the corresponding MOA command can be found in [`create_drift.py`](../util/create_drift.py). The script for running the MOA commands can be found in [`generate_moa_stream.py`](../util/generate_moa_stream.py).
+The functions used to process input files and the plotting methods can be used to view streams can be found in [`stream.py`](../util/stream.py). The functions used to algorithmically combine source streams and generate the corresponding MOA command can be found in [`create_drift.py`](../util/create_drift.py). The script for running the MOA commands can be found in [`drift_generator.py`](../util/drift_generator.py).
 
-The Jupyter Notebook [`moa_drift_generation.ipynb`](../moa_drift_generation.ipynb) shows how the functions can be used to create drift streams upon selecting parameter values. The notebook [`view_drift_generation.ipynb`](../view_drift.ipynb) shows how the plotting methods can be used to view generated streams.
+The Jupyter Notebook [`moa_drift_generation.ipynb`](../moa_drift_generation.ipynb) shows how the functions can be used to create drift streams upon selecting parameter values.
 
 
 <a name="common-issues"></a>
