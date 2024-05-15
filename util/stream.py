@@ -48,11 +48,11 @@ class Stream:
         content = pd.DataFrame(data_labels)
         content = content.to_csv(header=False, index=False).strip("\n").split("\n")
         content = [f"{line},\n" for line in content]
-        header = f"@relation '{dir}/{self.filename}'\n\n"
+        header = f"@relation '{self.filename}'\n\n"
         header += "@attribute att1 numeric\n"
         header += "@attribute class {1.0, 0.0}\n\n"
         header += "@data\n\n"
-        arff_filename = f"{self.filename}.arff"
+        arff_filename = f"{dir}/{self.filename}.arff"
         with open(arff_filename, "w") as output_file:
             output_file.writelines([header] + content)
         return arff_filename
