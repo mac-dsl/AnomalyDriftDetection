@@ -64,7 +64,7 @@ class createAnomalyIntervals:
                     "Wrong type of input parameter, must be anomaly modules.")
 
     # adds point anomalies within specified intervals
-    def add_Point_Anomaly(self, start: int, end: int, percentage: float, possible_values: list[float] = None) -> None:
+    def add_Point_Anomaly(self, start: int, end: int, percentage: float, possible_values: list = None) -> None:
         insertion_indexes = np.random.choice(
             np.arange(start, end), int(percentage*(end-start)))
         for index in insertion_indexes:
