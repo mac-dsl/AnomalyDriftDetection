@@ -9,17 +9,21 @@ from stream import Stream
 
 
 class createAnomalyIntervals:
-    def __init__(self, dataset) -> None:
-        self.dataset = dataset
+    def __init__(self, stream: Stream) -> None:
+        self.stream = stream
+        self.dataset = stream.data
+        self.stream_anomaly_labels = stream.anomaly_labels
         self.num_intervals = None
         self.points = []
+        # debugging purposes, remove later
+        print(type(self.dataset), self.dataset.size)
+        print(type(self.stream_anomaly_labels), self.stream_anomaly_labels.size)
 
     def create_intervals(self, num_intervals: int, gap_size: int):
         starting_points = []  # contains the starting point for each drift interval
         ending_points = []  # contains the ending point for each drift interval
         self.num_intervals = num_intervals
-        evenly_spaced = np.linspace(
-            0, len(self.dataset), num=(num_intervals+1))
+        evenly_spaced = np.linspace(0, len(self.dataset), num=(num_intervals+1))
         starting_points.append(0+1/2*gap_size)
         points = []
         for i in range(1, len(evenly_spaced)):
@@ -49,12 +53,6 @@ class createAnomalyIntervals:
                     anomaly_modules[i].dist, anomaly_modules[i].mean, anomaly_modules[i].std, anomaly_modules[i].num_values,
                     anomaly_modules[i].upperbound, anomaly_modules[i].lowerbound, anomaly_modules[i].skew
                 )
-
-            elif type(anomaly_modules[i]) == CorrelationAnomaly:
-                self.add_correlation_anomaly(self.points[i][0], self.points[i][1], anomaly_modules[i].percentage, anomaly_modules[i].min_noise,
-                                             anomaly_modules[i].max_noise, anomaly_modules[i].correlation_min, anomaly_modules[
-                                                 i].correlation_max, anomaly_modules[i].correlation_step,
-                                             anomaly_modules[i].length)
             elif type(anomaly_modules[i]) == SequentialAnomaly:
                 self.add_sequential_anomaly(
                     self.points[i][0], self.points[i][1], anomaly_modules[i].percentage,
@@ -69,9 +67,8 @@ class createAnomalyIntervals:
         insertion_indexes = np.random.choice(
             np.arange(start, end), int(percentage*(end-start)))
         for index in insertion_indexes:
-            self.dataset.loc[index, 0] = self.dataset.loc[index, 0] * \
-                np.random.choice(possible_values)  # setting the anomaly
-            self.dataset.loc[index, 1] = 1  # setting the label as anomalous
+            self.dataset[index] = self.dataset[index] * np.random.choice(possible_values)  # setting the anomaly
+            self.stream_anomaly_labels[index] = 1  # setting the label as anomalous
 
     # adds point anomalies according to a distribution
     def add_dist_point_anomaly(self, start: int, end: int, percentage: float, distribution, mu, std, num_values, upperbound, lowerbound, skew):
@@ -99,9 +96,8 @@ class createAnomalyIntervals:
             np.arange(start, end-1), int(percentage*(end-start)))
 
         for index in insertion_indexes:
-            self.dataset.iloc[int(
-                index), 0] += self.dataset.iloc[int(index), 0] * np.random.choice(possible_values)
-            self.dataset.iloc[int(index), 1] = 1
+            self.dataset[int(index)] += self.dataset[int(index)] * np.random.choice(possible_values)
+            self.stream_anomaly_labels[index] = 1
 
     def add_Collective_Anomaly(self, start: int, end: int, length: int, percentage: float, distribution, mu, std, num_values, upperbound, lowerbound, skew):
 
@@ -137,65 +133,27 @@ class createAnomalyIntervals:
 
         # inserting collective anomalies at required index
         for i in range(0, len(insertion_indexes)):
-            self.dataset.iloc[int(insertion_indexes[i]): int(
-                insertion_indexes[i]) + length, 0] = np.multiply(collective_sequences[i], self.dataset.iloc[int(insertion_indexes[i]): int(
-                    insertion_indexes[i]) + length, 0]) + self.dataset.iloc[int(insertion_indexes[i]): int(
-                        insertion_indexes[i]) + length, 0]
+            self.dataset[int(insertion_indexes[i]): int(
+                insertion_indexes[i]) + length] = np.multiply(collective_sequences[i], self.dataset[int(insertion_indexes[i]): int(
+                    insertion_indexes[i]) + length]) + self.dataset[int(insertion_indexes[i]): int(
+                        insertion_indexes[i]) + length]
             # setting the label as anomalous
-            self.dataset.iloc[int(insertion_indexes[i]): int(
-                insertion_indexes[i]) + length, 1] = 1
+            self.stream_anomaly_labels[int(insertion_indexes[i]): int(
+                insertion_indexes[i]) + length] = 1
 
-    def add_correlation_anomaly(self, start, end, percentage, min_noise, max_noise, correlation_min, correlation_max, correlation_step, length):
-        # creating an anomaly sequence that we will gradually add noise to
-        starting = int(np.random.choice(np.arange(start, end-length)))
-        anomaly_sequence = self.dataset.iloc[starting:starting +
-                                             length, 0].to_numpy()
-        possible_values = np.random.uniform(min_noise, max_noise, length)
-
-        processed_anomaly_sequence = np.add(np.multiply(
-            possible_values, anomaly_sequence), anomaly_sequence)
-        number_anomalies = math.ceil(((end-start)/length)*percentage)
-
-        anom_sequences = []
-        counter = 0
-        for i in range(correlation_min, correlation_max, correlation_step):
-            counter += 1
-            anom_sequences.append(processed_anomaly_sequence + i)
-
-        if len(anom_sequences) > number_anomalies:
-            anom_sequences = anom_sequences[:number_anomalies]
-        elif len(anom_sequences) < number_anomalies:
-            last = anom_sequences[-1]
-            for i in range(len(anom_sequences), number_anomalies-1):
-                anom_sequences[i] = last
-
-
-        insertion_indexes = np.random.choice(
-            np.arange(start, end, length), number_anomalies)
-        for i in range(0, len(insertion_indexes)):
-            self.dataset.iloc[int(insertion_indexes[i]): int(
-                insertion_indexes[i]) + length, 0] = anom_sequences[i]
-            # setting the label as anomalous
-            self.dataset.iloc[int(insertion_indexes[i]): int(
-                insertion_indexes[i]) + length, 1] = 1
 
     def add_sequential_anomaly(self, start, end, percentage, noise_factor, starting, ending, length):
         if starting == None and ending == None:
             starting = int(np.random.choice(np.arange(start, end-length)))
-            anomaly_sequence = self.dataset.iloc[starting:starting +
-                                                 length, 0].to_numpy()
+            anomaly_sequence = self.dataset[starting:starting + length]
 
         if ending == None:
-            anomaly_sequence = self.dataset.iloc[starting:starting +
-                                                 length, 0].to_numpy()
+            anomaly_sequence = self.dataset[starting:starting + length]
         else:
-            anomaly_sequence = self.dataset.iloc[starting:ending, 0].to_numpy()
+            anomaly_sequence = self.dataset[starting:ending]
             length = ending - starting
 
-        # print("anomaly sequence: " + str(anomaly_sequence))
-
         num_anomalies = math.ceil(((end-start)/length)*percentage)
-        # print("number of anomalies:" + str(num_anomalies))
 
         mid_insertions = np.linspace(start, end, num_anomalies)
         insertion_indexes = []
@@ -209,15 +167,15 @@ class createAnomalyIntervals:
 
         # insertine sequential anomalies at required index
         for i in range(0, len(insertion_indexes)):
-            self.dataset.iloc[int(insertion_indexes[i]): int(
-                insertion_indexes[i]) + length, 0] = anomaly_sequence
+            self.dataset[int(insertion_indexes[i]): int(
+                insertion_indexes[i]) + length] = anomaly_sequence
             # setting the label as anomalous
-            self.dataset.iloc[int(insertion_indexes[i]): int(
-                insertion_indexes[i]) + length, 1] = 1
+            self.stream_anomaly_labels[int(insertion_indexes[i]): int(
+                insertion_indexes[i]) + length] = 1
 
     def plot_dataset(self):
         plt.figure(figsize=(100, 30))
-        plt.plot(self.dataset.iloc[:, 0])
+        plt.plot(self.dataset)
         for point in self.points:
             plt.axvline(x=point[0], color='r', linestyle="--", linewidth=4)
             plt.axvline(x=point[1], color='r', linestyle="--", linewidth=4)
