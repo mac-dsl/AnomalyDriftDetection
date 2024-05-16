@@ -40,11 +40,12 @@ class Stream:
 
 
     #  @params dir: str, path to directory to write arff file to
-    def to_arff(self, dir="."):
+    def to_arff(self, dir=".", start=0, end=sys.maxsize):
         """
         Method to export Stream object to arff file in specified directory
         """
-        data_labels = np.concatenate([self.data, self.anomaly_labels], axis=1)
+
+        data_labels = np.concatenate([self.data[max(0,start):min(end,self.data.size)], self.anomaly_labels[max(0,start):min(end,self.data.size)]], axis=1)
         content = pd.DataFrame(data_labels)
         content = content.to_csv(header=False, index=False).strip("\n").split("\n")
         content = [f"{line},\n" for line in content]
@@ -72,6 +73,7 @@ class Stream:
     #  @params end: int, endn of interval to plot, default: sys.maxsize 
     def plot(self, start=0, end=sys.maxsize) -> None:
         end = min(end, self.length)
+        plt.rcParams['figure.dpi'] = 300
         fig, ax = plt.subplots(figsize=(10, 3))
         self.plot_anomaly(
             ax, start, end, self.filename, size=8, show_label=True
@@ -224,7 +226,7 @@ class DriftStream(Stream):
 
 
     #  @params dir: str, path to directory to write arff file to
-    def to_arff(self, dir="."):
+    def to_arff(self, dir=".", start=0):
         """
         Method to export Stream object to arff file in specified directory
         """
