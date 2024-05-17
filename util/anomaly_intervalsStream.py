@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import signal
 from scipy.stats import skewnorm
-from anomaly import *
+from anomaly8 import CollectiveAnomaly, PointAnomaly, SequentialAnomaly
 from stream import Stream
 
 
@@ -16,14 +16,15 @@ class createAnomalyIntervals:
         self.num_intervals = None
         self.points = []
         # debugging purposes, remove later
-        print(type(self.dataset), self.dataset.size)
-        print(type(self.stream_anomaly_labels), self.stream_anomaly_labels.size)
+        # print(type(self.dataset), self.dataset.size)
+        # print(type(self.stream_anomaly_labels), self.stream_anomaly_labels.size)
 
     def create_intervals(self, num_intervals: int, gap_size: int):
         starting_points = []  # contains the starting point for each drift interval
         ending_points = []  # contains the ending point for each drift interval
         self.num_intervals = num_intervals
         evenly_spaced = np.linspace(0, len(self.dataset), num=(num_intervals+1))
+        print(evenly_spaced)# debugging
         starting_points.append(0+1/2*gap_size)
         points = []
         for i in range(1, len(evenly_spaced)):
@@ -33,6 +34,8 @@ class createAnomalyIntervals:
         for i in range(0, len(starting_points)):
             points.append((starting_points[i], ending_points[i]))
         self.points = points
+        #debugging purposes
+        print(self.points)
 
     def add_anomalies(self, *anomaly_modules):
         if len(anomaly_modules) != len(self.points):
@@ -61,6 +64,7 @@ class createAnomalyIntervals:
             else:
                 raise ValueError(
                     "Wrong type of input parameter, must be anomaly modules.")
+        #self.stream.__set_anomaly_intervals()
 
     # adds point anomalies within specified intervals
     def add_Point_Anomaly(self, start: int, end: int, percentage: float, possible_values: list = None) -> None:
@@ -69,6 +73,8 @@ class createAnomalyIntervals:
         for index in insertion_indexes:
             self.dataset[index] = self.dataset[index] * np.random.choice(possible_values)  # setting the anomaly
             self.stream_anomaly_labels[index] = 1  # setting the label as anomalous
+        self.stream.data = self.dataset
+        self.stream.anomaly_labels = self.stream_anomaly_labels
 
     # adds point anomalies according to a distribution
     def add_dist_point_anomaly(self, start: int, end: int, percentage: float, distribution, mu, std, num_values, upperbound, lowerbound, skew):
@@ -90,14 +96,18 @@ class createAnomalyIntervals:
             possible_values = np.random.normal(mu, std, num_values)
         else:
             raise ValueError(
-                'Wrong distribution specification. Please enter either uniform, skew, or gaussian')
+                'Wrong distribution specification. Please enter either uniform, skew, or gaussian in string format')
 
         insertion_indexes = np.random.choice(
             np.arange(start, end-1), int(percentage*(end-start)))
+        print("Insertion Indexes:" + str(insertion_indexes))
 
         for index in insertion_indexes:
             self.dataset[int(index)] += self.dataset[int(index)] * np.random.choice(possible_values)
-            self.stream_anomaly_labels[index] = 1
+            self.stream_anomaly_labels[int(index)] = 1
+        
+        self.stream.data = self.dataset
+        self.stream.anomaly_labels = self.stream_anomaly_labels
 
     def add_Collective_Anomaly(self, start: int, end: int, length: int, percentage: float, distribution, mu, std, num_values, upperbound, lowerbound, skew):
 
@@ -140,6 +150,9 @@ class createAnomalyIntervals:
             # setting the label as anomalous
             self.stream_anomaly_labels[int(insertion_indexes[i]): int(
                 insertion_indexes[i]) + length] = 1
+        
+        self.stream.data = self.dataset
+        self.stream.anomaly_labels = self.stream_anomaly_labels
 
 
     def add_sequential_anomaly(self, start, end, percentage, noise_factor, starting, ending, length):
@@ -172,6 +185,8 @@ class createAnomalyIntervals:
             # setting the label as anomalous
             self.stream_anomaly_labels[int(insertion_indexes[i]): int(
                 insertion_indexes[i]) + length] = 1
+        self.stream.data = self.dataset
+        self.stream.anomaly_labels = self.stream_anomaly_labels
 
     def plot_dataset(self):
         plt.figure(figsize=(100, 30))

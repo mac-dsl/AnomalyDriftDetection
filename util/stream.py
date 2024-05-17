@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np 
 import pandas as pd
 import sys
+from matplotlib.lines import Line2D
 
 
 COLOURS = {
@@ -75,10 +76,15 @@ class Stream:
         end = min(end, self.length)
         plt.rcParams['figure.dpi'] = 300
         fig, ax = plt.subplots(figsize=(10, 3))
+        # may need to remove later if necessary
+        self.__set_anomaly_intervals()
         self.plot_anomaly(
             ax, start, end, self.filename, size=8, show_label=True
         )
-        fig.legend(loc='lower right')
+        non_anomalous_line = Line2D([0], [0], color='blue', lw=2)
+        anomalous_line = Line2D([0], [0], color='red', lw=2)
+        fig.legend([non_anomalous_line, anomalous_line], ['Non-Anomalous', 'Anomalous'])
+        fig.legend(loc='upper right')
 
 
     #  @param k: int, to indicate the kth anomaly to plot
@@ -110,26 +116,33 @@ class Stream:
         """
         start = max(0, start)
         end = min(self.data.shape[0], end)
-        ax.plot(np.arange(start, end), self.data[start:end],
-                f"{marker}b", label="_"*(not show_label) + "Non-Anomalous")
+        # ax.plot(np.arange(start, end), self.data[start:end],
+        #         f"{marker}b", label="_"*(not show_label) + "Non-Anomalous")
         if self.anomaly_intervals is None:
             self.__set_anomaly_intervals()
-        anom_ints = [
-            ai for ai in self.anomaly_intervals if
-            (ai[0] < end and ai[0] > start) or
-            (ai[1] < end and ai[1] > start) or
-            (ai[0] < start and ai[1] > end)
-        ]
-        for (i, (anom_start, anom_end)) in enumerate(anom_ints):
-            anom_start = max(start, anom_start)
-            anom_end = min(end, anom_end)
-            label = "_"*(i + (not show_label)) + "Anomaly"
-            ax.plot(
-                np.arange(anom_start, anom_end),
-                self.data[anom_start:anom_end],
-                f"{marker}r",
-                label=label
-            )
+        # anom_ints = [
+        #     ai for ai in self.anomaly_intervals if
+        #     (ai[0] < end and ai[0] > start) or
+        #     (ai[1] < end and ai[1] > start) or
+        #     (ai[0] < start and ai[1] > end)
+        # ]
+
+        # for (i, (anom_start, anom_end)) in enumerate(anom_ints):
+        #     anom_start = max(start, anom_start)
+        #     anom_end = min(end, anom_end)
+        #     label = "_"*(i + (not show_label)) + "Anomaly"
+        #     ax.plot(
+        #         np.arange(anom_start, anom_end),
+        #         self.data[anom_start:anom_end],
+        #         f"{marker}r",
+        #         label=label
+        #     )
+        
+        plt.plot(self.data[start:end], 'b-')
+        for i in range(1, len(self.data[start:end])):
+            if self.anomaly_labels[i] == 1:
+                plt.plot([i-1, i],self.data[start:end][i-1:i+1], 'r-')
+                
         if len(title) > 0:
             ax.set_title(title, size=size)
 

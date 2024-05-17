@@ -18,16 +18,6 @@ class CollectiveAnomaly:
         self.num_values = num_values
         self.skew = skew
 
-# class CorrelationAnomaly:
-#     def __init__(self, percentage, min_noise, max_noise, correlation_min, correlation_max, correlation_step, length=20) -> None:
-#         self.min_noise = min_noise
-#         self.max_noise = max_noise
-#         self.percentage = percentage
-#         self.correlation_min = correlation_min
-#         self.correlation_max = correlation_max
-#         self.correlation_step = correlation_step
-#         self.length = length
-
 # injects point anomalies; these deviate significantly from the rest of the data
 class PointAnomaly:
     def __init__(self, percentage: float, distribution: str = 'uniform', mu: float = None, std: float = None, num_values: int = 5, lowerbound=None, upperbound=None, skew=None) -> None:
