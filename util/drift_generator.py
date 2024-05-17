@@ -1,5 +1,5 @@
-from util.create_drift import get_split_index, get_split_index_uniform, get_stream_cuts
-from util.stream import Stream
+from create_drift import get_split_index, get_split_index_uniform, get_stream_cuts
+from stream import Stream
 import numpy as np
 import os
 import pandas as pd
