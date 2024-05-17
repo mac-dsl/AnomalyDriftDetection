@@ -24,7 +24,7 @@ class createAnomalyIntervals:
         ending_points = []  # contains the ending point for each drift interval
         self.num_intervals = num_intervals
         evenly_spaced = np.linspace(0, len(self.dataset), num=(num_intervals+1))
-        print(evenly_spaced)# debugging
+        #print(evenly_spaced)# debugging
         starting_points.append(0+1/2*gap_size)
         points = []
         for i in range(1, len(evenly_spaced)):
@@ -34,8 +34,8 @@ class createAnomalyIntervals:
         for i in range(0, len(starting_points)):
             points.append((starting_points[i], ending_points[i]))
         self.points = points
-        #debugging purposes
-        print(self.points)
+        
+        
 
     def add_anomalies(self, *anomaly_modules):
         if len(anomaly_modules) != len(self.points):
@@ -100,7 +100,7 @@ class createAnomalyIntervals:
 
         insertion_indexes = np.random.choice(
             np.arange(start, end-1), int(percentage*(end-start)))
-        print("Insertion Indexes:" + str(insertion_indexes))
+        #print("Insertion Indexes:" + str(insertion_indexes))
 
         for index in insertion_indexes:
             self.dataset[int(index)] += self.dataset[int(index)] * np.random.choice(possible_values)
@@ -140,17 +140,27 @@ class createAnomalyIntervals:
         for _ in range(number_anomalies):
             collective_sequences.append(
                 np.random.choice(possible_values, length))
+        
+        # debugging 
+        # print(insertion_indexes)
+        # print("COLLECTIVE SEQUENCES")
+        #print(collective_sequences[0].reshape(-1, 1).shape)
+        # print(self.dataset[int(insertion_indexes[0]): int(insertion_indexes[0]) + length].shape)
+       
 
         # inserting collective anomalies at required index
         for i in range(0, len(insertion_indexes)):
-            self.dataset[int(insertion_indexes[i]): int(
-                insertion_indexes[i]) + length] = np.multiply(collective_sequences[i], self.dataset[int(insertion_indexes[i]): int(
-                    insertion_indexes[i]) + length]) + self.dataset[int(insertion_indexes[i]): int(
-                        insertion_indexes[i]) + length]
+            reshaped_collective = collective_sequences[i].reshape(-1, 1)
+            
+
+            self.dataset[int(insertion_indexes[i]): int(insertion_indexes[i]) + length] = \
+            np.multiply(reshaped_collective, self.dataset[int(insertion_indexes[i]): int(
+                    insertion_indexes[i]) + length]) 
+            
             # setting the label as anomalous
             self.stream_anomaly_labels[int(insertion_indexes[i]): int(
                 insertion_indexes[i]) + length] = 1
-        
+            
         self.stream.data = self.dataset
         self.stream.anomaly_labels = self.stream_anomaly_labels
 
@@ -178,10 +188,15 @@ class createAnomalyIntervals:
         # print(noise)
         anomaly_sequence = anomaly_sequence + noise
 
+        # print("DATASET SLICE")
+        # print(self.dataset[int(insertion_indexes[0]): int(insertion_indexes[0]) + length].shape)
+        # print(anomaly_sequence[0])
+        # print(anomaly_sequence[1])
+
         # insertine sequential anomalies at required index
         for i in range(0, len(insertion_indexes)):
             self.dataset[int(insertion_indexes[i]): int(
-                insertion_indexes[i]) + length] = anomaly_sequence
+                insertion_indexes[i]) + length] = anomaly_sequence[0].reshape(-1, 1)
             # setting the label as anomalous
             self.stream_anomaly_labels[int(insertion_indexes[i]): int(
                 insertion_indexes[i]) + length] = 1

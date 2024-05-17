@@ -85,6 +85,7 @@ class Stream:
         anomalous_line = Line2D([0], [0], color='red', lw=2)
         fig.legend([non_anomalous_line, anomalous_line], ['Non-Anomalous', 'Anomalous'])
         fig.legend(loc='upper right')
+        
 
 
     #  @param k: int, to indicate the kth anomaly to plot
@@ -140,11 +141,13 @@ class Stream:
         
         plt.plot(self.data[start:end], 'b-')
         for i in range(1, len(self.data[start:end])):
-            if self.anomaly_labels[i] == 1:
+            if self.anomaly_labels[start:end][i] == 1:
                 plt.plot([i-1, i],self.data[start:end][i-1:i+1], 'r-')
-                
+        
+
         if len(title) > 0:
             ax.set_title(title, size=size)
+
 
 
     def __set_anomaly_intervals(self):
