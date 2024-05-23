@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import sys
 from matplotlib.lines import Line2D
+from scipy import signal
 
 
 COLOURS = {
@@ -16,6 +17,8 @@ COLOURS = {
     5: 'tab:purple',
     'drift': 'gold'
 }
+
+
 
 class Stream:
     """
@@ -210,6 +213,35 @@ class Stream:
 
     def __get_drift_labels(self):
         return np.zeros((len(self.anomaly_labels),1))
+
+# function to transform stream, to create a new stream
+def transform_stream(stream: Stream, start: float, end: float, drift_scale: float) -> Stream:
+    transformed_stream = stream
+    dataset = transformed_stream.data
+    if start < 1:
+        cd1 = round(len(dataset)*start)
+        if end < 1:
+            cd2 = round(len(dataset)*end)
+        if start > 1:
+            cd1 = start
+        if end > 1:
+            cd2 = end
+    labels = transformed_stream.anomaly_labels
+    # in here, ratio = drift_scale (if ratio < 1 -> inc. freq.)
+    val=drift_scale
+    d_temp = dataset[cd1:cd2]
+    wid_len = int((cd2-cd1)*val)
+    d_mod = signal.resample(d_temp, wid_len) 
+    l_temp = labels[cd1:cd2]
+    l_mod = signal.resample(l_temp, wid_len)
+    l_mod = np.round(l_mod) 
+    transformed_stream.anomaly_labels = np.concatenate((labels[:cd1], l_mod, labels[cd2:]))
+    transformed_stream.anomaly_labels = np.absolute(transformed_stream.anomaly_labels)
+    # caution! the length of the stream data attribute is changed here
+    transformed_stream.data = np.concatenate((dataset[:cd1], d_mod, dataset[cd2:]))
+    transformed_stream.drift_labels = np.zeros((len(transformed_stream.anomaly_labels),1))
+    transformed_stream.length = len(transformed_stream.anomaly_labels)
+    return transformed_stream
 
 
 class DriftStream(Stream):
