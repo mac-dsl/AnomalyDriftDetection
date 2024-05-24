@@ -4,8 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import signal
 from scipy.stats import skewnorm
-from anomaly import CollectiveAnomaly, PointAnomaly, SequentialAnomaly
-from stream import Stream
+from util.anomaly import CollectiveAnomaly, PointAnomaly, SequentialAnomaly
+from util.stream import Stream
 
 
 class createAnomalyIntervals:
