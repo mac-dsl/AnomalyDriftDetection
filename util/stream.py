@@ -120,34 +120,26 @@ class Stream:
         """
         start = max(0, start)
         end = min(self.data.shape[0], end)
-        # ax.plot(np.arange(start, end), self.data[start:end],
-        #         f"{marker}b", label="_"*(not show_label) + "Non-Anomalous")
-        if self.anomaly_intervals is None:
-            self.__set_anomaly_intervals()
-        # anom_ints = [
-        #     ai for ai in self.anomaly_intervals if
-        #     (ai[0] < end and ai[0] > start) or
-        #     (ai[1] < end and ai[1] > start) or
-        #     (ai[0] < start and ai[1] > end)
-        # ]
-
-        # for (i, (anom_start, anom_end)) in enumerate(anom_ints):
-        #     anom_start = max(start, anom_start)
-        #     anom_end = min(end, anom_end)
-        #     label = "_"*(i + (not show_label)) + "Anomaly"
-        #     ax.plot(
-        #         np.arange(anom_start, anom_end),
-        #         self.data[anom_start:anom_end],
-        #         f"{marker}r",
-        #         label=label
-        #     )
-        
-        plt.plot(self.data[start:end], 'b-')
-        for i in range(1, len(self.data[start:end])):
-            if self.anomaly_labels[start:end][i] == 1:
-                plt.plot([i-1, i],self.data[start:end][i-1:i+1], 'r-')
-        
-
+        ax.plot(np.arange(start, end), self.data[start:end],
+                f"{marker}b", label="_"*(not show_label) + "Non-Anomalous")
+       
+        self.__set_anomaly_intervals()
+        anom_ints = [
+            ai for ai in self.anomaly_intervals if
+            (ai[0] < end and ai[0] > start) or
+            (ai[1] < end and ai[1] > start) or
+            (ai[0] < start and ai[1] > end)
+        ]
+        for (i, (anom_start, anom_end)) in enumerate(anom_ints):
+            anom_start = max(start, anom_start)
+            anom_end = min(end, anom_end)
+            label = "_"*(i + (not show_label)) + "Anomaly"
+            ax.plot(
+                np.arange(anom_start, anom_end+1),
+                self.data[anom_start:anom_end+1],
+                f"{marker}r",
+                label=label
+            )
         if len(title) > 0:
             ax.set_title(title, size=size)
 
