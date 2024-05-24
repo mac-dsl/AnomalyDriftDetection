@@ -6,6 +6,7 @@ import pandas as pd
 import sys
 from matplotlib.lines import Line2D
 from scipy import signal
+import streamlit as st
 
 
 COLOURS = {
@@ -93,6 +94,9 @@ class Stream:
         anomalous_line = Line2D([0], [0], color='red', lw=2)
         fig.legend([non_anomalous_line, anomalous_line], ['Non-Anomalous', 'Anomalous'])
         fig.legend(loc='upper right')
+        #STREAMLIT
+        st.plotly_chart(fig,use_container_width=True)
+        
         
 
 
