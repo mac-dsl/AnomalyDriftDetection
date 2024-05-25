@@ -135,8 +135,8 @@ class Stream:
             anom_end = min(end, anom_end)
             label = "_"*(i + (not show_label)) + "Anomaly"
             ax.plot(
-                np.arange(anom_start, anom_end+1),
-                self.data[anom_start:anom_end+1],
+               np.arange(anom_start, min(len(self.data),anom_end+1)),
+                self.data[anom_start: min(len(self.data),anom_end+1)],
                 f"{marker}r"
             )
         if len(title) > 0:
