@@ -6,6 +6,7 @@ import pandas as pd
 import sys
 from matplotlib.lines import Line2D
 from scipy import signal
+import streamlit as st
 
 
 COLOURS = {
@@ -19,12 +20,13 @@ COLOURS = {
 }
 
 
-
 class Stream:
     """
     Class representing a stream of data
     """
     def __init__(self, filepath) -> None:
+        st.text("Making class...")
+        print("making class")
         filename = filepath.split("/")[-1]
         self.path = "/".join(filepath.split("/")[:-1])
         self.filename = ".".join(filename.split(".")[:-1])
@@ -45,6 +47,7 @@ class Stream:
             self.data, self.anomaly_labels = self.__get_arff_data_labels(filepath)
             self.drift_labels = self.__get_drift_labels()
             self.length = len(self.anomaly_labels)
+        st.text("done making class")
 
 
 
@@ -81,6 +84,8 @@ class Stream:
     #  @params start: int, start of interval to plot, default: 0
     #  @params end: int, endn of interval to plot, default: sys.maxsize 
     def plot(self, start=0, end=sys.maxsize) -> None:
+        st.text('CALLED')
+        print('called')
         end = min(end, self.length)
         plt.rcParams['figure.dpi'] = 300
         fig, ax = plt.subplots(figsize=(10, 3))
@@ -93,9 +98,9 @@ class Stream:
         anomalous_line = Line2D([0], [0], color='red', lw=2)
         fig.legend([non_anomalous_line, anomalous_line], ['Non-Anomalous', 'Anomalous'])
         fig.legend(loc='upper right')
-       
+     
         
-
+        
 
     #  @param k: int, to indicate the kth anomaly to plot
     #             value range between 1 and n_anomalies
@@ -141,8 +146,8 @@ class Stream:
             anom_end = min(end, anom_end)
             label = "_"*(i + (not show_label)) + "Anomaly"
             ax.plot(
-                np.arange(anom_start, min(len(self.data),anom_end+1)),
-                self.data[anom_start: min(len(self.data),anom_end+1)],
+                np.arange(anom_start, anom_end+1),
+                self.data[anom_start:anom_end+1],
                 f"{marker}r"
             )
         if len(title) > 0:

@@ -7,6 +7,7 @@ import sys
 from matplotlib.lines import Line2D
 from scipy import signal
 import streamlit as st
+import tempfile
 
 
 COLOURS = {
@@ -20,12 +21,12 @@ COLOURS = {
 }
 
 
-
 class Stream:
     """
     Class representing a stream of data
     """
     def __init__(self, filepath) -> None:
+        st.text("Making class...")
         filename = filepath.split("/")[-1]
         self.path = "/".join(filepath.split("/")[:-1])
         self.filename = ".".join(filename.split(".")[:-1])
@@ -46,6 +47,7 @@ class Stream:
             self.data, self.anomaly_labels = self.__get_arff_data_labels(filepath)
             self.drift_labels = self.__get_drift_labels()
             self.length = len(self.anomaly_labels)
+        st.text("done making class")
 
 
 
@@ -81,7 +83,8 @@ class Stream:
 
     #  @params start: int, start of interval to plot, default: 0
     #  @params end: int, endn of interval to plot, default: sys.maxsize 
-    def plot(self, start=0, end=sys.maxsize) -> None:
+    def plot(self, start=0, end=sys.maxsize):
+        st.text('CALLED')
         end = min(end, self.length)
         plt.rcParams['figure.dpi'] = 300
         fig, ax = plt.subplots(figsize=(10, 3))
@@ -94,11 +97,8 @@ class Stream:
         anomalous_line = Line2D([0], [0], color='red', lw=2)
         fig.legend([non_anomalous_line, anomalous_line], ['Non-Anomalous', 'Anomalous'])
         fig.legend(loc='upper right')
-        #STREAMLIT
-        st.plotly_chart(fig,use_container_width=True)
-        
-        
-
+        return fig
+    
 
     #  @param k: int, to indicate the kth anomaly to plot
     #             value range between 1 and n_anomalies
@@ -520,3 +520,5 @@ class DriftStream(Stream):
                     source_streams.append(line.split(':')[-1].strip())
                     
         return drift_label, source_streams, streams, positions, w_drift, seq_before
+    
+
