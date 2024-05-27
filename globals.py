@@ -1,1 +1,0 @@
-ECG1 = None
