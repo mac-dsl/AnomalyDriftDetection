@@ -18,8 +18,6 @@ COLOURS = {
     'drift': 'gold'
 }
 
-
-
 class Stream:
     """
     Class representing a stream of data

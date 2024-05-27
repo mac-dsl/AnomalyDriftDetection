@@ -12,22 +12,25 @@ import numpy as np
 import plotly.figure_factory as ff
 import matplotlib.pyplot as plt
 
+import home_ui, anomaly_ui, drift_ui
+
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
-def main():
-    st.title("CANGene: Concept Drift and Anomaly Generator")
+PAGES = {
+    "Home": home_ui,
+    "Anomaly Injection": anomaly_ui,
+    "Drift Injection": drift_ui
+}
 
-    uploaded_file = st.file_uploader("Choose an .arff or .csv file")
-    if uploaded_file is not None:
-        # Save the uploaded file to a temporary location
-        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-            tmp_file.write(uploaded_file.getbuffer())
-            file_path = tmp_file.name
-        
-        print(file_path)
-        ECG1 = Stream(file_path)
-        fig = ECG1.plot()
-        st.pyplot(fig)
+
+if 'current_page' not in st.session_state:
+    st.session_state['current_page'] = 'Home'
+    
+def main():
+        current_page = st.session_state['current_page']
+        page = PAGES[current_page]
+        page.main()
 
 if __name__ == "__main__":
     main()
+
