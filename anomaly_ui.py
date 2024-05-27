@@ -1,7 +1,8 @@
 import streamlit as st
 from util.anomaly import SequentialAnomaly, CollectiveAnomaly, PointAnomaly, AnomalyConfiguration
+from anomaly_input_cmpt import anomaly_module_input_component
 
-
+    
 
 def main():
     st.title("Anomaly Injection")
@@ -13,19 +14,45 @@ def main():
     with col2: 
         gap_size = st.number_input(label="Gap Size", min_value=1, value=None)
    
-   # plot of the dataset
+    #plot of the dataset
     fig = st.session_state.ECG1.plot()
     st.pyplot(fig)
+
+    #storing the anomaly configuration
+    st.session_state.user_configured_anoms = AnomalyConfiguration()
+
 
     if num_intervals and gap_size:
         st.write("You can now create anomaly modules. How many would you like to create?")
         num_anomaly_modules = st.number_input(label="Number of Custom Anomaly Modules", min_value=1, max_value=10)
-        with st.container() as anomaly_modules_cont:
+        with st.container():
             for i in range(int(num_anomaly_modules)):
+                st.session_state.disable_dist = True
+                col1, col2 = st.columns(2)
+                col3, col4 = st.columns(2)
+                st.session_state.disable_dist_option = False
+                with col1: 
+                    st.write(f'<p style="color:#164f91;">Custom Anomaly Module {i+1}', unsafe_allow_html=True)
+                    name = st.text_input(label="Choose Module Name", key=f"anom_name{i}")
+                    if name:
+                        st.session_state.disable_dist = False
+                with col2: 
+                    pass
+                with col3: 
+                    selected_anomaly = st.selectbox(label="Select Anomaly Type", options=["Point Anomaly", "Collective Anomaly", "Sequential Anomaly"],index=None, key=f"type_anom{i}", disabled=st.session_state.disable_dist)
+                    if selected_anomaly == 'Sequential Anomaly': 
+                        st.session_state.disable_dist_option = True
+                with col4: 
+                    selected_dist_type = st.selectbox(label="Select Distribution Type", options=["Uniform", "Gaussian", "Skewed"], index=None, disabled=st.session_state.disable_dist_option or st.session_state.disable_dist, key=f"dist_anom{i}")
                 # add custom component here
-                input_value = st.text_input(f"Anomaly Module {i+1}")
+                st.session_state.configured_module = anomaly_module_input_component(name, selected_anomaly,selected_dist_type,i)
+                st.session_state.user_configured_anoms.add_anomaly_module(st.session_state.configured_module, name, selected_dist_type)
+    
+    if st.button("Create Anomaly Modules"):
+        st.session_state.user_configured_anoms.print_state()
+        
 
-
+    
     # going to next page after anomaly injection (injecting drift)
     if st.button("Inject Drift"):
         st.session_state['current_page'] = 'Drift Injection'

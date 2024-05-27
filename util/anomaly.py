@@ -44,14 +44,13 @@ class SequentialAnomaly:
 
 # used in the ui
 class AnomalyConfiguration:
-    def __init__(self, num_anomalies) -> None:
-        self.num_anomalies = num_anomalies
+    def __init__(self) -> None:
         # key: name of anomaly, value: [type, distribution] 
         # type is either point, coll, sequential; distribution is either 'uniform' 'normal' 'skew'
         self.anomaly_dists = {} 
         # key: name of anomaly, value: the class object 
         self.anomalies = {}
-        self.fields = {}
+        self.num_anomalies = None
     
     def add_anomaly_module(self, anomaly, name:str, dist:str):
         if name in self.anomaly_dists:
@@ -65,5 +64,9 @@ class AnomalyConfiguration:
             self.anomaly_dists[name] = ['Sequential Anomaly', dist]
         self.anomalies[name] = anomaly
 
+    def print_state(self):
+        print(f"Number of Anomalies: {self.num_anomalies}")
+        print(self.anomaly_dists)
+        print(self.anomalies)
 
     
