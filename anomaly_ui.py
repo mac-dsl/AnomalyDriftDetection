@@ -1,4 +1,5 @@
 import streamlit as st
+from util.anomaly import SequentialAnomaly, CollectiveAnomaly, PointAnomaly, AnomalyConfiguration
 
 
 
@@ -12,15 +13,17 @@ def main():
     with col2: 
         gap_size = st.number_input(label="Gap Size", min_value=1, value=None)
    
+   # plot of the dataset
     fig = st.session_state.ECG1.plot()
     st.pyplot(fig)
 
     if num_intervals and gap_size:
         st.write("You can now create anomaly modules. How many would you like to create?")
         num_anomaly_modules = st.number_input(label="Number of Custom Anomaly Modules", min_value=1, max_value=10)
-
-
-    
+        with st.container() as anomaly_modules_cont:
+            for i in range(int(num_anomaly_modules)):
+                # add custom component here
+                input_value = st.text_input(f"Anomaly Module {i+1}")
 
 
     # going to next page after anomaly injection (injecting drift)

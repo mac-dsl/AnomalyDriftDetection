@@ -51,10 +51,12 @@ class AnomalyConfiguration:
         self.anomaly_dists = {} 
         # key: name of anomaly, value: the class object 
         self.anomalies = {}
+        self.fields = {}
     
     def add_anomaly_module(self, anomaly, name:str, dist:str):
         if name in self.anomaly_dists:
             st.write("That name is already chosen. Please pick a different name.")
+            return
         if type(anomaly) == PointAnomaly: 
             self.anomaly_dists[name] = ['Point Anomaly', dist]
         elif type(anomaly) == CollectiveAnomaly: 
