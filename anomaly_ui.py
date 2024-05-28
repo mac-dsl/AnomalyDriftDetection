@@ -5,14 +5,14 @@ from anomaly_input_cmpt import anomaly_module_input_component
     
 
 def main():
-    st.title("Anomaly Injection")
+    st.title("Anomaly Module Customization")
     
     col1, col2 = st.columns(2)
 
     with col1: 
-        num_intervals = st.number_input(label="Number of Anomalous Intervals", min_value=1, value=None)
+        st.session_state.num_intervals = st.number_input(label="Number of Anomalous Intervals", min_value=1, value=None)
     with col2: 
-        gap_size = st.number_input(label="Gap Size", min_value=1, value=None)
+        st.session_state.gap_size = st.number_input(label="Gap Size", min_value=1, value=None)
    
     #plot of the dataset
     fig = st.session_state.ECG1.plot()
@@ -22,7 +22,7 @@ def main():
     st.session_state.user_configured_anoms = AnomalyConfiguration()
 
 
-    if num_intervals and gap_size:
+    if st.session_state.num_intervals and st.session_state.gap_size:
         st.write("You can now create anomaly modules. How many would you like to create?")
         num_anomaly_modules = st.number_input(label="Number of Custom Anomaly Modules", min_value=1, max_value=10)
         with st.container():
@@ -45,18 +45,16 @@ def main():
                 with col4: 
                     selected_dist_type = st.selectbox(label="Select Distribution Type", options=["Uniform", "Gaussian", "Skewed"], index=None, disabled=st.session_state.disable_dist_option or st.session_state.disable_dist, key=f"dist_anom{i}")
                 # add custom component here
-                st.session_state.configured_module = anomaly_module_input_component(name, selected_anomaly,selected_dist_type,i)
-                st.session_state.user_configured_anoms.add_anomaly_module(st.session_state.configured_module, name, selected_dist_type)
+                if name:
+                    st.session_state.configured_module = anomaly_module_input_component(name, selected_anomaly,selected_dist_type,i)
+                    st.session_state.user_configured_anoms.add_anomaly_module(st.session_state.configured_module, name, selected_dist_type)
     
     if st.button("Create Anomaly Modules"):
+        # for debugging, remove later
         st.session_state.user_configured_anoms.print_state()
-        
-
-    
-    # going to next page after anomaly injection (injecting drift)
-    if st.button("Inject Drift"):
-        st.session_state['current_page'] = 'Drift Injection'
+        st.session_state['current_page'] = 'Anomaly Injection'
         st.rerun()
+        
 
 if __name__ == "__main__":
     main()

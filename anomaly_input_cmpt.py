@@ -13,7 +13,7 @@ def anomaly_module_input_component(name, selected_anomaly, selected_dist_type,i)
             percentage = st.number_input(label="Percentage of Anomalous Data (%)", min_value=0.0, max_value=100.0, key=name)
             lowerbound = st.number_input(label="Lowerbound Value", key=f"{name,i}3")
         with col2:
-            num_values = st.number_input(label='Number of Unique Values (Optional)', min_value=0, value=None, key=f"{name,i}1")
+            num_values = st.number_input(label='Number of Unique Values (Optional)', min_value=0, value=5, key=f"{name,i}1")
             upperbound = st.number_input(label="Upperbound Value", key=f"{name,i}2")
         
         if not (percentage and lowerbound and upperbound):
@@ -28,7 +28,7 @@ def anomaly_module_input_component(name, selected_anomaly, selected_dist_type,i)
             percentage = st.number_input(label="Percentage of Anomalous Data (%)", min_value=0.0, max_value=100.0, key=name)
             mu = st.number_input(label="Mean", key=f"{name,i}4", value=1.00)
         with col2:
-            num_values = st.number_input(label='Number of Unique Values (Optional)',min_value=0, value=None, key=f"{name,i}1")
+            num_values = st.number_input(label='Number of Unique Values (Optional)',min_value=0, value=5, key=f"{name,i}1")
             std = st.number_input(label="Standard Deviation", key=f"{name,i}5", value=1.00)
         
         if not (percentage and mu and std):
@@ -61,9 +61,9 @@ def anomaly_module_input_component(name, selected_anomaly, selected_dist_type,i)
         with col1:
             percentage = st.number_input(label="Percentage of Anomalous Data (%)", min_value=0.0, max_value=100.0, key=name)
             lowerbound = st.number_input(label="Lowerbound Value", key=f"{name,i}3")
-            length = st.number_input(label='Length of Anomaly', min_value=2, max_value=1000)
+            length = st.number_input(label='Length of Anomaly', min_value=2, max_value=1000, key=f"{name,i}9")
         with col2:
-            num_values = st.number_input(label='Number of Unique Values', min_value=0, key=f"{name,i}1")
+            num_values = st.number_input(label='Number of Unique Values', min_value=0, key=f"{name,i}1", value=5)
             upperbound = st.number_input(label="Upperbound Value", key=f"{name,i}2")
 
         if not (percentage and lowerbound and upperbound and length):
@@ -76,10 +76,10 @@ def anomaly_module_input_component(name, selected_anomaly, selected_dist_type,i)
         with col1:
             percentage = st.number_input(label="Percentage of Anomalous Data (%)", min_value=0.0, max_value=100.0, key=name)
             mu = st.number_input(label="Mean", key=f"{name,i}4", value=1.00)
-            length = st.number_input(label='Length of Anomaly', min_value=0, max_value=1000)
+            length = st.number_input(label='Length of Anomaly', min_value=0, max_value=1000,key=f"{name,i}9")
         with col2:
             print(f"{name,i}1")
-            num_values = st.number_input(label='Number of Unique Values (Optional)',min_value=0, key=f"{name,i}1")
+            num_values = st.number_input(label='Number of Unique Values (Optional)',min_value=0, key=f"{name,i}1",value=5)
             std = st.number_input(label="Standard Deviation", key=f"{name,i}5", value=1.00)
 
         if not (percentage and mu and std and length):
@@ -95,7 +95,7 @@ def anomaly_module_input_component(name, selected_anomaly, selected_dist_type,i)
             percentage = st.number_input(label="Percentage of Anomalous Data (%)", min_value=0.0, max_value=100.0, key=name)
             length = st.number_input(label='Length of Anomaly', min_value=0, max_value=1000, key=f"{name,i}6", value=5)
         with col2:
-            num_values = st.number_input(label='Number of Unique Values (Optional)',min_value=0, key=f"{name,i}1")
+            num_values = st.number_input(label='Number of Unique Values (Optional)',min_value=0, key=f"{name,i}1", value=5)
         with col3:
             mu = st.number_input(label="Mean", key=f"{name,i}4", value=1.00)
         with col4:

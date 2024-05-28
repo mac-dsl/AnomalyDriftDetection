@@ -12,13 +12,14 @@ import numpy as np
 import plotly.figure_factory as ff
 import matplotlib.pyplot as plt
 
-import home_ui, anomaly_ui, drift_ui
+import home_ui, anomaly_ui, drift_ui, anomaly_insertion_ui
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 PAGES = {
     "Home": home_ui,
-    "Anomaly Injection": anomaly_ui,
+    "Anomaly Customization": anomaly_ui,
+    "Anomaly Injection": anomaly_insertion_ui,
     "Drift Injection": drift_ui
 }
 

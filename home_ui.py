@@ -39,7 +39,7 @@ def main():
 
         # enable button to continue to anomaly injection here 
         if st.button("Inject Anomaly"):
-            st.session_state['current_page'] = 'Anomaly Injection'
+            st.session_state['current_page'] = 'Anomaly Customization'
             st.rerun()
 
 
