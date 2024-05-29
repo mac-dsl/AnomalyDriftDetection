@@ -1,8 +1,6 @@
 import streamlit as st
 from util.anomaly import SequentialAnomaly, CollectiveAnomaly, PointAnomaly, AnomalyConfiguration
 
-    
-
 def main():
     st.title("Anomaly Injection")
 
@@ -18,6 +16,8 @@ def main():
         for i in range(int(st.session_state.num_intervals)):
             anom_interval = st.selectbox(label=f"Choose Anomaly Module for Interval {i+1}", options=st.session_state.user_configured_anoms.anomalies.keys() ,key=f"interval_anom_{i}", index=None)
             st.session_state.interval_config.append(anom_interval)
+    
+    print(st.session_state.interval_config)
    
    
    

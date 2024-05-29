@@ -17,6 +17,7 @@ def main():
     #plot of the dataset
     fig = st.session_state.ECG1.plot()
     st.pyplot(fig)
+    st.session_state.next_page = True
 
     #storing the anomaly configuration
     st.session_state.user_configured_anoms = AnomalyConfiguration()
@@ -45,11 +46,16 @@ def main():
                 with col4: 
                     selected_dist_type = st.selectbox(label="Select Distribution Type", options=["Uniform", "Gaussian", "Skewed"], index=None, disabled=st.session_state.disable_dist_option or st.session_state.disable_dist, key=f"dist_anom{i}")
                 # add custom component here
-                if name:
+                if name and selected_anomaly and selected_dist_type:
                     st.session_state.configured_module = anomaly_module_input_component(name, selected_anomaly,selected_dist_type,i)
                     st.session_state.user_configured_anoms.add_anomaly_module(st.session_state.configured_module, name, selected_dist_type)
     
-    if st.button("Create Anomaly Modules"):
+            if len(st.session_state.user_configured_anoms.anomalies) == num_anomaly_modules:
+                # enabling next page button after everything is full
+                st.session_state.next_page = False
+    
+    
+    if st.button("Inject Anomaly Modules", disabled=st.session_state.next_page):
         # for debugging, remove later
         st.session_state.user_configured_anoms.print_state()
         st.session_state['current_page'] = 'Anomaly Injection'
