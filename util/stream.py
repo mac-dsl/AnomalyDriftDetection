@@ -57,7 +57,8 @@ class Stream:
         header += "@attribute att1 numeric\n"
         header += "@attribute class {1.0, 0.0}\n\n"
         header += "@data\n\n"
-        arff_filename = f"{self.filename}.arff"
+        # arff_filename = f"{self.filename}.arff"
+        arff_filename = f"{dir}/{self.filename}.arff"
         with open(arff_filename, "w") as output_file:
             output_file.writelines([header] + content)
         return arff_filename
