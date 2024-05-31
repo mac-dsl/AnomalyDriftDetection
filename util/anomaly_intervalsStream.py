@@ -6,6 +6,7 @@ from scipy import signal
 from scipy.stats import skewnorm
 from util.anomaly import CollectiveAnomaly, PointAnomaly, SequentialAnomaly
 from util.stream import Stream
+import streamlit as st
 
 
 class createAnomalyIntervals:
@@ -82,15 +83,21 @@ class createAnomalyIntervals:
             mu = self.dataset[int(start):int(end)].mean() * 3
         if std == None:
             std = self.dataset[int(start):int(end)].std() * 3
+        
+        if num_values == None: 
+            num_values = 5
+
         if distribution == 'uniform':
             possible_values = np.random.uniform(
                 lowerbound, upperbound, num_values)
+        
         elif distribution == 'skew':
             possible_values = skewnorm.rvs(
-                a=skew, loc=upperbound, size=num_values)
+                a=skew, loc=mu,scale=std, size=num_values)
+            
             possible_values = possible_values - min(possible_values)
             possible_values = possible_values / max(possible_values)
-            possible_values = possible_values * upperbound
+            
 
         elif distribution == 'gaussian':
             possible_values = np.random.normal(mu, std, num_values)
@@ -113,6 +120,9 @@ class createAnomalyIntervals:
 
         number_anomalies = math.ceil(((end-start)/length)*percentage)
 
+        if num_values == None: 
+            num_values = 10
+
         if mu == None:
             mu = self.dataset[int(start):int(end)].mean() * 3
         if std == None:
@@ -122,10 +132,10 @@ class createAnomalyIntervals:
                 lowerbound, upperbound, num_values)
         elif distribution == 'skew':
             possible_values = skewnorm.rvs(
-                a=skew, loc=upperbound, size=num_values)
+                a=skew, loc=mu,scale=std, size=num_values)
             possible_values = possible_values - min(possible_values)
             possible_values = possible_values / max(possible_values)
-            possible_values = possible_values * upperbound
+            
 
         elif distribution == 'gaussian':
             possible_values = np.random.normal(mu, std, num_values)

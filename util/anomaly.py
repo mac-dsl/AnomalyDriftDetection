@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import signal
-import streamlit as st
 
 # injects a random sequence of anomalies (i.e collective anomaly)
 class CollectiveAnomaly:
@@ -19,6 +18,12 @@ class CollectiveAnomaly:
         self.skew = skew
         self.name = ''
 
+    def print_attributes(self):
+        attributes = vars(self)
+        for name, value in attributes.items():
+            print(f"{name}: {value}")
+
+
 # injects point anomalies; these deviate significantly from the rest of the data
 class PointAnomaly:
     def __init__(self, percentage: float, distribution: str = 'uniform', mu: float = None, std: float = None, num_values: int = 5, lowerbound=None, upperbound=None, skew=None) -> None:
@@ -32,6 +37,11 @@ class PointAnomaly:
         self.upperbound = upperbound
         self.name = ''
 
+    def print_attributes(self):
+        attributes = vars(self)
+        for name, value in attributes.items():
+            print(f"{name}: {value}")
+
 # injects sequential anomalies into the dataset (collective anomalies that keep repeating)
 class SequentialAnomaly:
     def __init__(self, percentage: float, noise_factor: int, start=None, end=None, length=15):
@@ -41,6 +51,11 @@ class SequentialAnomaly:
         self.start = start
         self.end = end
         self.name = ''
+    
+    def print_attributes(self):
+        attributes = vars(self)
+        for name, value in attributes.items():
+            print(f"{name}: {value}")
 
 # used in the ui
 class AnomalyConfiguration:
@@ -54,7 +69,7 @@ class AnomalyConfiguration:
     
     def add_anomaly_module(self, anomaly, name:str, dist:str):
         if name in self.anomaly_dists:
-            st.write("That name is already chosen. Please pick a different name.")
+            #st.write("That name is already chosen. Please pick a different name.")
             return
         if type(anomaly) == PointAnomaly: 
             self.anomaly_dists[name] = ['Point Anomaly', dist]
@@ -68,5 +83,14 @@ class AnomalyConfiguration:
         print(f"Number of Anomalies: {self.num_anomalies}")
         print(self.anomaly_dists)
         print(self.anomalies)
+    
+    def print_anoms_attributes(self):
+        for anom in self.anomalies: 
+            self.anomalies[anom].print_attributes()
+            
+
+    
+
+
 
     

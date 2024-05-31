@@ -2,7 +2,8 @@ import streamlit as st
 from util.anomaly import SequentialAnomaly, CollectiveAnomaly, PointAnomaly, AnomalyConfiguration
 from anomaly_input_cmpt import anomaly_module_input_component
 
-    
+ #storing the anomaly configuration
+st.session_state.user_configured_anoms = AnomalyConfiguration()
 
 def main():
     st.title("Anomaly Module Customization")
@@ -20,7 +21,7 @@ def main():
     st.session_state.next_page = True
 
     #storing the anomaly configuration
-    st.session_state.user_configured_anoms = AnomalyConfiguration()
+    #st.session_state.user_configured_anoms = AnomalyConfiguration()
 
 
     if st.session_state.num_intervals and st.session_state.gap_size:
@@ -29,6 +30,7 @@ def main():
         with st.container():
             for i in range(int(num_anomaly_modules)):
                 st.session_state.disable_dist = True
+                st.session_state.configured_module = None
                 col1, col2 = st.columns(2)
                 col3, col4 = st.columns(2)
                 st.session_state.disable_dist_option = False
@@ -45,22 +47,27 @@ def main():
                         st.session_state.disable_dist_option = True
                 with col4: 
                     selected_dist_type = st.selectbox(label="Select Distribution Type", options=["Uniform", "Gaussian", "Skewed"], index=None, disabled=st.session_state.disable_dist_option or st.session_state.disable_dist, key=f"dist_anom{i}")
+                
                 # add custom component here
-                if name and selected_anomaly and selected_dist_type:
-                    st.session_state.configured_module = anomaly_module_input_component(name, selected_anomaly,selected_dist_type,i)
-                    st.session_state.user_configured_anoms.add_anomaly_module(st.session_state.configured_module, name, selected_dist_type)
+                if name and selected_anomaly:
+                    if selected_dist_type or selected_anomaly == 'Sequential Anomaly':
+                        anomaly_module_input_component(name, selected_anomaly,selected_dist_type,i)
+                        if st.session_state.configured_module is not None:
+                            st.write(st.session_state.configured_module.__dict__) 
+                        else: 
+                            st.write("The configured module is none.")
+                        st.session_state.user_configured_anoms.add_anomaly_module(st.session_state.configured_module, name, selected_dist_type)
+                        #st.write(st.session_state.user_configured_anoms.anomalies)
     
             if len(st.session_state.user_configured_anoms.anomalies) == num_anomaly_modules:
                 # enabling next page button after everything is full
                 st.session_state.next_page = False
     
-    
+    st.write(st.session_state.user_configured_anoms.anomalies)
     if st.button("Inject Anomaly Modules", disabled=st.session_state.next_page):
         # for debugging, remove later
-        st.session_state.user_configured_anoms.print_state()
         st.session_state['current_page'] = 'Anomaly Injection'
         st.rerun()
         
-
 if __name__ == "__main__":
     main()
