@@ -1,0 +1,42 @@
+## Parameter settings for demo.
+source_dir: './data/benchmark/weather'
+## If you want to use other source files as a stream, you can fill in filenames below.
+source_files: 
+  - 'GR'
+  - 'NO'
+  - 'DE'
+anomaly_step:
+  - num_intervals: 1
+    gap_size: 3000
+  - num_intervals: 2
+    gap_size: 2000
+anomaly_params:
+## 1st anomaly injection params: point anomaly using uniform distribution for whole range
+  - type: 'point'
+    distribution: 'uniform'
+    upperbound: 0.5
+    lowerbound: -0.5
+    percentage: 0.01
+    num_values: 100
+## 2nd anomaly injection: for 2-intervals (2) sequential anomaly
+  ## (1) collective anomaly using gaussian distribution
+  - type: 'collective'
+    distribution: 'gaussian'
+    mu: 1
+    std: 0.1
+    percentage: 0.01
+    num_values: 50
+    length: 6
+  - type: 'sequence'
+    noise_factor: 0.1
+    start: 2232 ## 24*31*3
+    percentage: 0.01
+    length: 24
+## Drift params
+moa_path: '../moa-release-2023.04.0/lib'
+drift_dir: '/data/synthetic'
+drift_params:
+  n_drift: 5
+  p_drift: 0.01
+  p_before: 0.1
+  sub_dir: 'demo'

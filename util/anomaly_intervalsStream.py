@@ -186,7 +186,10 @@ class createAnomalyIntervals:
         # add noise processing here
         noise = np.random.normal(0, noise_factor, len(anomaly_sequence))
         # print(noise)
-        anomaly_sequence = anomaly_sequence + noise
+        # anomaly_sequence = anomaly_sequence + noise
+        # revise anomaly sequence which looks similar to the original seq. [start:end] # jp 20240531
+        anomaly_sequence = anomaly_sequence.reshape(-1) + noise.reshape(-1)
+        anomaly_sequence = anomaly_sequence.reshape(-1,1)
 
         # print("DATASET SLICE")
         # print(self.dataset[int(insertion_indexes[0]): int(insertion_indexes[0]) + length].shape)
@@ -196,7 +199,9 @@ class createAnomalyIntervals:
         # insertine sequential anomalies at required index
         for i in range(0, len(insertion_indexes)):
             self.dataset[int(insertion_indexes[i]): int(
-                insertion_indexes[i]) + length] = anomaly_sequence[0].reshape(-1, 1)
+                # insertion_indexes[i]) + length] = anomaly_sequence[0].reshape(-1, 1)
+                # revise anomaly sequence which looks similar to the original seq. [start:end] # jp 20240531
+                insertion_indexes[i]) + length] = anomaly_sequence.reshape(-1, 1) 
             # setting the label as anomalous
             self.stream_anomaly_labels[int(insertion_indexes[i]): int(
                 insertion_indexes[i]) + length] = 1
