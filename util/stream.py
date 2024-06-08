@@ -134,10 +134,11 @@ class Stream:
             anom_start = max(start, anom_start)
             anom_end = min(end, anom_end)
             label = "_"*(i + (not show_label)) + "Anomaly"
+            # TO GO BACK TO REGULAR LINEWIDTH, REMOVE LINEWIDTH PARAMETER
             ax.plot(
                np.arange(anom_start, min(len(self.data),anom_end+1)),
                 self.data[anom_start: min(len(self.data),anom_end+1)],
-                f"{marker}r"
+                f"{marker}r", linewidth=3
             )
         if len(title) > 0:
             ax.set_title(title, size=size)
