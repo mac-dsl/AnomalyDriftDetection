@@ -178,10 +178,11 @@ class createAnomalyIntervals:
 
         num_anomalies = math.ceil(((end-start)/length)*percentage)
 
-        mid_insertions = np.linspace(start, end, num_anomalies)
-        insertion_indexes = []
-        for index in mid_insertions:
-            insertion_indexes.append(int(math.ceil(index-length/2)))
+        # mid_insertions = np.linspace(start, end, num_anomalies)
+        # insertion_indexes = []
+        # for index in mid_insertions:
+            # insertion_indexes.append(int(math.ceil(index-length/2)))
+        insertion_indexes = np.random.choice(np.arange(start, end, length), num_anomalies)
 
         # add noise processing here
         noise = np.random.normal(0, noise_factor, len(anomaly_sequence))
