@@ -5,32 +5,36 @@ source_files:
   - 'GR'
   - 'NO'
   - 'DE'
+## Define '# of Steps'
 anomaly_step:
   - num_intervals: 1
     gap_size: 3000
   - num_intervals: 2
     gap_size: 2000
+
+## Define all types of Anomaly
 anomaly_params:
-## 1st anomaly injection params: point anomaly using uniform distribution for whole range
+## 1st step: one-interval (point)
   - type: 'point'
     distribution: 'uniform'
     upperbound: 0.5
     lowerbound: -0.5
     percentage: 0.01
     num_values: 100
-## 2nd anomaly injection: for 2-intervals (2) sequential anomaly
-  ## (1) collective anomaly using gaussian distribution
+## 2nd step: for 2-intervals 
+  ## (1) 1st interval (collective) 
   - type: 'collective'
     distribution: 'gaussian'
     mu: 1
-    std: 0.1
+    sigma: 0.1
     percentage: 0.01
     num_values: 50
     length: 6
-  - type: 'sequence'
-    noise_factor: 0.1
+  ## (2) 2nd interval (sequential)
+  - type: 'periodic'
+    noise_factor: 0.5
     start: 2232 ## 24*31*3
-    percentage: 0.01
+    percentage: 0.05
     length: 24
 ## Drift params
 moa_path: '../moa-release-2023.04.0/lib'
