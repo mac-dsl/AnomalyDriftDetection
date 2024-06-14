@@ -16,15 +16,15 @@ Steps:
 
 1. Clone the repository git (need to change the repo name to CanGene)
 
-'''
+```
 git clone https://github.com/mac-dsl/AnomalyDriftDetection.git
-'''
+```
 
 2. Install dependencies from requirement.txt
 
-'''
+```
 pip install -r requirements.txt
-'''
+```
 
 ## Benchmark
 All are datasets and time series are stored in ./data. We describe below the different types of datasets used in our benchmark.
