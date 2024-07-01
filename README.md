@@ -51,4 +51,6 @@ We include several demo. file to test the experiments.
 - 2 streams of ECG data are used, one of which is transformed to create the increased heart rate ECG signal.
 
 4.  moa_drift_generation.ipynb
-- 
+- This Notebook details the process of generating a drift between two source data streams without setting up a config file.
+- More details are provided on the specific parameters used to generate drift as well as strategies for deciding on some parameters.
+- This Notebook also shows how individual drift parameters can be viewed and manually updated to customize a generated stream post-generation.
