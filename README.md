@@ -46,7 +46,9 @@ We include several demo. file to test the experiments.
 - 
 
 3.  ECG_drift_demo.ipynb
-- 
+- This Notebook demonstrates applying CanGene for generating a sample data stream with concept drift between ECG signals of varying frequencies to imitate different heart rates.
+- Parameters are defined in 'ECG_drift_demo_config.yaml'.
+- 2 streams of ECG data are used, one of which is transformed to create the increased heart rate ECG signal.
 
 4.  moa_drift_generation.ipynb
 - 
