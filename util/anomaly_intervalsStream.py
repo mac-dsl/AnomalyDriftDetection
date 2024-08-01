@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import signal
 from scipy.stats import skewnorm
-from util.anomaly import CollectiveAnomaly, PointAnomaly, SequentialAnomaly
+from util.anomaly import CollectiveAnomaly, PointAnomaly, PeriodicAnomaly
 from util.stream import Stream
 
 
@@ -56,7 +56,7 @@ class createAnomalyIntervals:
                     anomaly_modules[i].dist, anomaly_modules[i].mean, anomaly_modules[i].std, anomaly_modules[i].num_values,
                     anomaly_modules[i].upperbound, anomaly_modules[i].lowerbound, anomaly_modules[i].skew
                 )
-            elif type(anomaly_modules[i]) == SequentialAnomaly:
+            elif type(anomaly_modules[i]) == PeriodicAnomaly:
                 self.add_sequential_anomaly(
                     self.points[i][0], self.points[i][1], anomaly_modules[i].percentage,
                     anomaly_modules[i].noise_factor, anomaly_modules[i].start, anomaly_modules[i].end, anomaly_modules[i].length
