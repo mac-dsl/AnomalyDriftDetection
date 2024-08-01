@@ -2,9 +2,9 @@
 source_dir: './data/benchmark/weather'
 ## If you want to use other source files as a stream, you can fill in filenames below.
 source_files: 
-  - 'GR'
-  - 'NO'
-  - 'DE'
+  - 'GR_temperature.arff'
+  - 'NO_temperature.arff'
+  - 'DE_temperature.arff'
 ## Define '# of Steps'
 anomaly_step:
   - num_intervals: 1
@@ -37,7 +37,7 @@ anomaly_params:
     percentage: 0.05
     length: 24
 ## Drift params
-moa_path: '../moa-release-2023.04.0/lib'
+moa_path: '../../moa-release-2023.04.0/lib'
 drift_dir: '/data/synthetic'
 drift_params:
   n_drift: 5
