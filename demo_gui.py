@@ -524,14 +524,36 @@ class Demo(tk.Frame):
         nw=tk.Tk()
 
         nw.title('Selected file')
-        nw.geometry('1050x330')
+        nw.geometry('1050x430')
 
         # graph_img = tk.PhotoImage(file=f'stream_{index_stream}.png', master=nw)
-        graph_img = tk.PhotoImage(file='drift.png', master=nw)
-        btn = tk.Button(nw, image=graph_img, command=self.close_win)
-        btn.pack()
+        self.graph_img = tk.PhotoImage(file='drift.png', master=nw)
+        self.btn = tk.Button(nw, image=self.graph_img, command=self.close_win)
+        self.btn.grid(row=0, columnspan=8)
+
+        st_lb=tk.Label(nw, text='start point').grid(row=1, column=0)
+        self.st_en=tk.Entry(nw)
+        self.st_en.grid(row=1, column=1)
+        self.st_en.insert(0, 0)
+
+        end_lb=tk.Label(nw, text='end point').grid(row=1, column=3)
+        self.end_en=tk.Entry(nw)
+        self.end_en.grid(row=1, column=4)
+        self.end_en.insert(0, 10000)
+
+        self.zoom_btn = tk.Button(nw, text='Zoom', width=18, command=self.zoom_draw)
+        self.zoom_btn.grid(row=1, column=5)
+
+
         nw.mainloop()
 
+    def zoom_draw(self):
+        self.ds.plot_drift(int(self.st_en.get()), int(self.end_en.get()))
+        plt.savefig('zoom.png', dpi=100)
+
+        self.graph_img = tk.PhotoImage(file='zoom.png', master=nw)
+        self.btn=tk.Button(nw, image=self.graph_img, command=self.close_win)
+        self.btn.grid(row=0, columnspan=8)
 
     def show_ts(self, sel):
         """
@@ -606,14 +628,14 @@ class Demo(tk.Frame):
 
         length = self.DataStreams[0].length
 
-        ds = g.run_generate_grad_stream_moa(
+        self.ds = g.run_generate_grad_stream_moa(
             length=length,
             dataset='Data',
             mode=0,
             **self.config_param['drift_params']
         )
 
-        ds.plot_drift()
+        self.ds.plot_drift()
         plt.savefig('drift.png', dpi=100)
 
         self.show_ts(2)
@@ -664,14 +686,14 @@ class Demo(tk.Frame):
         length = self.DataStreams[0].length
         dataset = 'Data'
 
-        ds = g.run_generate_grad_stream_moa(
+        self.ds = g.run_generate_grad_stream_moa(
             length=length,
             dataset = dataset,
             mode=0,  # 0 for variable drift widths and positions, 1 for uniform
             **self.config_param['drift_params']
         )
 
-        ds.plot_drift()
+        self.ds.plot_drift()
         plt.savefig('drift.png', dpi=100)
 
         self.show_ts(2)
