@@ -153,7 +153,7 @@ class createAnomalyIntervals:
             reshaped_collective = collective_sequences[i].reshape(-1, 1)
             
 
-            self.dataset[int(insertion_indexes[i]): int(insertion_indexes[i]) + length] = \
+            self.dataset[int(insertion_indexes[i]): int(insertion_indexes[i]) + length] += \
             np.multiply(reshaped_collective, self.dataset[int(insertion_indexes[i]): int(
                     insertion_indexes[i]) + length]) 
             

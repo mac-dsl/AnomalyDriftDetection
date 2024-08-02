@@ -100,28 +100,38 @@ class AnomalyConfig:
             radio_btn3.grid(row=2, column=2)
 
         elif self.type_num =='periodic':
+            
+            ## noise factor
+            noise_factor_lb = tk.Label(self.frame, text='Noise Factor').grid(row=4, column=0)
+            self.noise_factor = tk.StringVar()
+            self.noise_factor.set(0.5)
+            noise_factor_entry = tk.Entry(self.frame, textvariable=self.noise_factor)
+            noise_factor_entry.grid(row=4, column=1)
+
+            ## start
+            start_lb = tk.Label(self.frame, text='Start point').grid(row=4, column=2)
+            self.startpoint = tk.StringVar()
+            self.startpoint.set(2232)
+            startpoint_entry = tk.Entry(self.frame, textvariable=self.startpoint)
+            startpoint_entry.grid(row=4, column=3)
+            
             ## percentage
-            per_lb = tk.Label(self.frame, text='Percentage').grid(row=4, column=0)
+            per_lb = tk.Label(self.frame, text='Percentage').grid(row=5, column=0)
             self.per = tk.StringVar()
             self.per.set(0.01)
             per_entry = tk.Entry(self.frame, textvariable=self.per)
-            per_entry.grid(row=4, column=1)
-            per_entry.insert(0, 0.01)
-            ## num_values
-            num_val_lb = tk.Label(self.frame, text='Num. Values').grid(row=4, column=2)
-            self.num_val = tk.StringVar()
-            self.num_val.set(100)
-            num_val_entry = tk.Entry(self.frame, textvariable=self.num_val)
-            num_val_entry.grid(row=4, column=3)
-            num_val_entry.insert(0, 100)
+            per_entry.grid(row=5, column=1)
 
+            len_seq_lb = tk.Label(self.frame, text='Length').grid(row=5, column=2)
             self.len_seq = tk.StringVar()
             self.len_seq.set(24)
-
-            len_seq_lb = tk.Label(self.frame, text='Length').grid(row=4, column=4)
             len_seq_entry = tk.Entry(self.frame, textvariable=self.len_seq)
-            len_seq_entry.grid(row=4, column=5)
-            len_seq_entry.insert(0, 24)
+            len_seq_entry.grid(row=5, column=3)
+            # len_seq_entry.insert(0, 24)
+
+            ## Button for save    
+            save_periodic_btn = tk.Button(self.frame, text='Save Setting', width=20, command= self.save_periodic)
+            save_periodic_btn.grid(row=6, column=3)    
 
     def get_dist(self, dist_num):
         """
@@ -136,7 +146,7 @@ class AnomalyConfig:
             init_1, init_2 = '0.5', '-0.5'
         elif dist_num ==2:
             txt_1, txt_2 = 'mu', 'sigma'
-            init_1, init_2 = '1', '0.1'
+            init_1, init_2 = '0', '0.1'
         elif dist_num ==3:
             txt_1, txt_2 = 'alpha', 'Upperbound'
             init_1, init_2 = '0.5', '0.5'
@@ -177,9 +187,9 @@ class AnomalyConfig:
         num_val_entry.grid(row=4, column=3)
         # num_val_entry.insert(0, 100)
 
+        len_seq_lb = tk.Label(self.frame, text='Length').grid(row=4, column=4)
         self.len_seq = tk.StringVar()
         self.len_seq.set(24)
-        len_seq_lb = tk.Label(self.frame, text='Length').grid(row=4, column=4)
         len_seq_entry = tk.Entry(self.frame, textvariable=self.len_seq)
         len_seq_entry.grid(row=4, column=5)
         # len_seq_entry.insert(0, 24)
@@ -219,11 +229,24 @@ class AnomalyConfig:
 
         self.dict_param['percentage'] = float(self.per.get())
         self.dict_param['num_values'] = int(self.num_val.get())
-        if self.type_num ==1:
+
+        if self.type_num != 'point':
             self.dict_param['length'] = int(self.len_seq.get())
 
         # print(self.dict_param)
         # self.master.dict_param = self.dict_param
+        self.master.destroy()
+
+    def save_periodic(self):
+        """
+        Save the periodic anomaly configuration
+        """
+        self.dict_param={'type':'periodic'}
+        self.dict_param['noise_factor'] = float(self.noise_factor.get())
+        self.dict_param['start'] = int(self.startpoint.get())
+        self.dict_param['percentage'] = float(self.per.get())
+        self.dict_param['length'] = int(self.len_seq.get())
+
         self.master.destroy()
         
     def display_window(self):
@@ -655,7 +678,7 @@ class Demo(tk.Frame):
         self.popup_win()
 
     def clear_all(self):
-        for i in range(self.index_stream):
+        for i in range(len(self.show_lbls)):
             self.show_lbls[i].configure(image='')
         self.DataStreams = []
         self.index_stream = 0
