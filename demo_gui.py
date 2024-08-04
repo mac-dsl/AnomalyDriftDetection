@@ -21,6 +21,7 @@ from PIL import Image
 
 
 type_txt = ['point', 'collective', 'periodic']
+
 ##########################################################
 # @param anomalyStream: class createAnomalyIntervals
 # @config_param: config parameter, .yaml
@@ -65,16 +66,17 @@ class AnomalyConfig:
         self.frame = tk.Frame(self.master)
         self.ind = ind
         self.len_interval = len_interval
-        self.dict_param = {}       
+        self.dict_param = {}    
+        self.btn_font = tFont.Font(size=16)   
 
-        tk.Label(self.frame, text=f'Interval {ind+1}/{len_interval}', width=20).grid(row=0)
-        type_lb = tk.Label(self.frame, text='Type', width=20).grid(row=1, column=0)    
-        type_combo = ttk.Combobox(self.frame, width=20, textvariable=type_txt, values=type_txt)
+        tk.Label(self.frame, font=self.btn_font, text=f'Interval {ind+1}/{len_interval}', width=20).grid(row=0)
+        type_lb = tk.Label(self.frame, font=self.btn_font, text='Type', width=20).grid(row=1, column=0)    
+        type_combo = ttk.Combobox(self.frame, font=self.btn_font, width=20, textvariable=type_txt, values=type_txt)
         type_combo.grid(row=1, column=1)
         type_combo.current(0)
         
         ## Button for set type
-        type_btn = tk.Button(self.frame, text='Save Type', width=20, command=lambda: self.get_type(type_combo))
+        type_btn = tk.Button(self.frame, font=self.btn_font, text='Save Type', width=20, command=lambda: self.get_type(type_combo))
         type_btn.grid(row=1, column=2)
         # self.curr += 2
         self.frame.pack()
@@ -90,39 +92,39 @@ class AnomalyConfig:
 
         ## point and collective
         if self.type_num == 'point' or self.type_num =='collective':
-            radio_btn1 = tk.Radiobutton(self.frame, text='Uniform', value=1, variable=dist, command=lambda: self.get_dist(1))
+            radio_btn1 = tk.Radiobutton(self.frame, font=self.btn_font, text='Uniform', value=1, variable=dist, command=lambda: self.get_dist(1))
             radio_btn1.grid(row=2, column=0)
 
-            radio_btn2 = tk.Radiobutton(self.frame , text='Gaussian', value=2, variable=dist, command=lambda: self.get_dist(2))
+            radio_btn2 = tk.Radiobutton(self.frame , font=self.btn_font, text='Gaussian', value=2, variable=dist, command=lambda: self.get_dist(2))
             radio_btn2.grid(row=2, column=1)
 
-            radio_btn3 = tk.Radiobutton(self.frame , text='Skew',  value=3, variable=dist, command=lambda: self.get_dist(3))
+            radio_btn3 = tk.Radiobutton(self.frame , font=self.btn_font, text='Skew',  value=3, variable=dist, command=lambda: self.get_dist(3))
             radio_btn3.grid(row=2, column=2)
 
         elif self.type_num =='periodic':
             
             ## noise factor
-            noise_factor_lb = tk.Label(self.frame, text='Noise Factor').grid(row=4, column=0)
+            noise_factor_lb = tk.Label(self.frame, font=self.btn_font, text='Noise Factor').grid(row=4, column=0)
             self.noise_factor = tk.StringVar()
             self.noise_factor.set(0.5)
             noise_factor_entry = tk.Entry(self.frame, textvariable=self.noise_factor)
             noise_factor_entry.grid(row=4, column=1)
 
             ## start
-            start_lb = tk.Label(self.frame, text='Start point').grid(row=4, column=2)
+            start_lb = tk.Label(self.frame, font=self.btn_font, text='Start point').grid(row=4, column=2)
             self.startpoint = tk.StringVar()
             self.startpoint.set(2232)
             startpoint_entry = tk.Entry(self.frame, textvariable=self.startpoint)
             startpoint_entry.grid(row=4, column=3)
             
             ## percentage
-            per_lb = tk.Label(self.frame, text='Percentage').grid(row=5, column=0)
+            per_lb = tk.Label(self.frame, font=self.btn_font, text='Percentage').grid(row=5, column=0)
             self.per = tk.StringVar()
             self.per.set(0.01)
             per_entry = tk.Entry(self.frame, textvariable=self.per)
             per_entry.grid(row=5, column=1)
 
-            len_seq_lb = tk.Label(self.frame, text='Length').grid(row=5, column=2)
+            len_seq_lb = tk.Label(self.frame, font=self.btn_font, text='Length').grid(row=5, column=2)
             self.len_seq = tk.StringVar()
             self.len_seq.set(24)
             len_seq_entry = tk.Entry(self.frame, textvariable=self.len_seq)
@@ -151,7 +153,7 @@ class AnomalyConfig:
             txt_1, txt_2 = 'alpha', 'Upperbound'
             init_1, init_2 = '0.5', '0.5'
 
-        lb1 = tk.Entry(self.frame, justify='center')
+        lb1 = tk.Entry(self.frame, font=self.btn_font, justify='center')
         lb1.grid(row=3, column=0)
         lb1.insert(0, txt_1)
         lb1.configure(state='readonly')
@@ -161,7 +163,7 @@ class AnomalyConfig:
         var1_entry.grid(row=3, column=1)
         # var1_entry.insert(0, init_1)
 
-        lb2 = tk.Entry(self.frame, justify='center')
+        lb2 = tk.Entry(self.frame, font=self.btn_font, justify='center')
         lb2.grid(row=3, column=2)
         lb2.insert(0, txt_2)
         lb2.configure(state='readonly')
@@ -172,7 +174,7 @@ class AnomalyConfig:
         # var2_entry.insert(0, init_2)
 
         ## percentage
-        per_lb = tk.Label(self.frame, text='Percentage').grid(row=4, column=0)
+        per_lb = tk.Label(self.frame, font=self.btn_font,text='Percentage').grid(row=4, column=0)
         self.per = tk.StringVar()
         self.per.set(0.01)
         per_entry = tk.Entry(self.frame, textvariable=self.per)
@@ -180,14 +182,14 @@ class AnomalyConfig:
         # per_entry.insert(0, 0.01)
 
         ## num_values
-        num_val_lb = tk.Label(self.frame, text='Num. Values').grid(row=4, column=2)
+        num_val_lb = tk.Label(self.frame, font=self.btn_font,text='Num. Values').grid(row=4, column=2)
         self.num_val = tk.StringVar()
         self.num_val.set(100)
         num_val_entry = tk.Entry(self.frame, textvariable=self.num_val)
         num_val_entry.grid(row=4, column=3)
         # num_val_entry.insert(0, 100)
 
-        len_seq_lb = tk.Label(self.frame, text='Length').grid(row=4, column=4)
+        len_seq_lb = tk.Label(self.frame, font=self.btn_font,text='Length').grid(row=4, column=4)
         self.len_seq = tk.StringVar()
         self.len_seq.set(24)
         len_seq_entry = tk.Entry(self.frame, textvariable=self.len_seq)
@@ -201,7 +203,7 @@ class AnomalyConfig:
 
 
         ## Button for save    
-        save_anomaly_btn = tk.Button(self.frame, text='Save Setting', width=20, command=lambda: self.save_dist(dist_num))
+        save_anomaly_btn = tk.Button(self.frame, font=self.btn_font,text='Save Setting', width=20, command=lambda: self.save_dist(dist_num))
         save_anomaly_btn.grid(row=5, column=3)    
 
     def save_dist(self, dist_num):
@@ -269,17 +271,18 @@ class IntervalConfig(tk.Frame):
         # self.frame = tk.Frame(self.master)
 
         self.config_param = {}
+        self.btn_font = tFont.Font(size=16)  
 
         self.config_rows = 0
         ## In this case, we only apply single-step    
-        interval_lb = tk.Label(self.frame, text='Interval').grid(row=self.config_rows, column=0)
+        interval_lb = tk.Label(self.frame, font=self.btn_font, text='Interval').grid(row=self.config_rows, column=0)
         # self.interval = tk.StringVar()
         # self.interval.set(1)
         self.interval_en =tk.Entry(self.frame)
         self.interval_en.grid(row=self.config_rows, column=1)    
         self.interval_en.insert(0, 1)    
 
-        gap_lb=tk.Label(self.frame, text='Gap Size').grid(row=self.config_rows, column=2)
+        gap_lb=tk.Label(self.frame, font=self.btn_font, text='Gap Size').grid(row=self.config_rows, column=2)
         # self.gap_size=tk.StringVar()
         # self.gap_size.set(0)
         self.gap_en=tk.Entry(self.frame)
@@ -287,10 +290,10 @@ class IntervalConfig(tk.Frame):
         self.gap_en.insert(0, 0)
 
         ## Button for set interval
-        self.interval_btn = tk.Button(self.frame, text='Save Interval', width=22, command=self.set_interval)
+        self.interval_btn = tk.Button(self.frame, font=self.btn_font, text='Save Interval', width=22, command=self.set_interval)
         self.interval_btn.grid(row=self.config_rows, column=4)
         self.config_rows +=1
-
+        
         self.dict_param = {}
         self.frame.pack()
 
@@ -312,7 +315,7 @@ class IntervalConfig(tk.Frame):
 
         for i in range(len_interval):
             # print('start:', i)
-            tk.Label(self.frame, text='Anomaly Params').grid(row=self.config_rows)            
+            tk.Label(self.frame, font=self.btn_font, text='Anomaly Params').grid(row=self.config_rows)            
             result_type = self.set_type(i, len_interval)
             if result_type == 0:
                 self.interval_btn.configure(state='normal')
@@ -320,7 +323,7 @@ class IntervalConfig(tk.Frame):
             self.config_rows +=1
             # print('ROW:', self.config_rows)
 
-        self.inject_btn = tk.Button(self.frame, text='Apply Params', width=22, command=self.inject_anomaly)
+        self.inject_btn = tk.Button(self.frame, font=self.btn_font, text='Apply Params', width=22, command=self.inject_anomaly)
         self.inject_btn.grid(row=self.config_rows, column=4)
 
     def set_type(self, ind, len_interval):
@@ -356,27 +359,27 @@ class DriftConfig(tk.Frame):
         # self.frame = tk.Frame(self.master)
 
         self.config_param = {}
-
+        self.btn_font = tFont.Font(size=16)
         self.config_rows = 0
         ## In this case, we only apply single-step    
-        n_drift_lb = tk.Label(self.frame, text='Num. Drift').grid(row=self.config_rows, column=0)
+        n_drift_lb = tk.Label(self.frame, font=self.btn_font, text='Num. Drift').grid(row=self.config_rows, column=0)
         self.n_drift_en =tk.Entry(self.frame)
         self.n_drift_en.grid(row=self.config_rows, column=1)    
         self.n_drift_en.insert(0, 5)    
 
-        p_drift_lb=tk.Label(self.frame, text='Drift Period').grid(row=self.config_rows, column=2)
+        p_drift_lb=tk.Label(self.frame, font=self.btn_font, text='Drift Period').grid(row=self.config_rows, column=2)
         self.p_drift_en=tk.Entry(self.frame)
         self.p_drift_en.grid(row=self.config_rows, column=3)
         self.p_drift_en.insert(0, 0.01)
 
-        p_before_lb=tk.Label(self.frame, text='Before Anomalies').grid(row=self.config_rows, column=4)
+        p_before_lb=tk.Label(self.frame, font=self.btn_font, text='Before Anomalies').grid(row=self.config_rows, column=4)
         self.p_before_en=tk.Entry(self.frame)
         self.p_before_en.grid(row=self.config_rows, column=5)
         self.p_before_en.insert(0, 0.1)
 
         self.config_rows +=1
         ## Button for set interval
-        self.drift_config_btn = tk.Button(self.frame, text='Save Params', width=22, command=self.set_config)
+        self.drift_config_btn = tk.Button(self.frame, font=self.btn_font, text='Save Params', width=22, command=self.set_config)
         self.drift_config_btn.grid(row=self.config_rows, column=5)
         self.config_rows +=1
 
@@ -464,22 +467,22 @@ class Demo(tk.Frame):
 
         ##########################################################
         # Menu Frame
-        self.load_btn = tk.Button(self.Menu, text='Load Data', width=18, command=self.load_ts)
+        self.load_btn = tk.Button(self.Menu, font=self.btn_font, text='Load Data', width=18, command=self.load_ts)
         self.load_btn.grid(row=0, column=0, ipadx=2, ipady=2)
 
         # self.show_btn = tk.Button(self.Menu, text='Show All', width=18, state='disable', command=lambda: self.show_ts(0))
         # self.show_btn.grid(row=0, column=1)
 
-        self.yaml_btn = tk.Button(self.Menu, text='Load YAML', width=18, state='normal', command=self.load_yaml)
+        self.yaml_btn = tk.Button(self.Menu, font=self.btn_font, text='Load YAML', width=18, state='normal', command=self.load_yaml)
         self.yaml_btn.grid(row=0, column=1, ipadx=2, ipady=2)
 
-        self.anomaly_btn = tk.Button(self.Menu, text='Anomaly Injection', width=18, state='disable', command=self.anomaly_injection)
+        self.anomaly_btn = tk.Button(self.Menu, font=self.btn_font, text='Anomaly Injection', width=18, state='disable', command=self.anomaly_injection)
         self.anomaly_btn.grid(row=0, column=2, ipadx=2, ipady=2)
 
-        self.drift_btn = tk.Button(self.Menu,  text='Drift Generation', width=18, state='disable', command=self.drift_generation)
+        self.drift_btn = tk.Button(self.Menu,  font=self.btn_font, text='Drift Generation', width=18, state='disable', command=self.drift_generation)
         self.drift_btn.grid(row=0, column=3, ipadx=2, ipady=2)        
 
-        self.clear_btn = tk.Button(self.Menu,  text='Clear All', width=18, state='normal', command=self.clear_all)
+        self.clear_btn = tk.Button(self.Menu,  font=self.btn_font, text='Clear All', width=18, state='normal', command=self.clear_all)
         self.clear_btn.grid(row=0, column=4, ipadx=2, ipady=2)        
 
         # info = tk.StringVar()
