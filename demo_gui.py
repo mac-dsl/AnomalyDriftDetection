@@ -313,7 +313,10 @@ class IntervalConfig(tk.Frame):
         for i in range(len_interval):
             # print('start:', i)
             tk.Label(self.frame, text='Anomaly Params').grid(row=self.config_rows)            
-            self.set_type(i, len_interval)
+            result_type = self.set_type(i, len_interval)
+            if result_type == 0:
+                self.interval_btn.configure(state='normal')
+                return 0
             self.config_rows +=1
             # print('ROW:', self.config_rows)
 
@@ -324,11 +327,15 @@ class IntervalConfig(tk.Frame):
         """
         Show new pop-up window to get corresponding parameters (for each interval)
         """
+        
         self.dict_param = AnomalyConfig(self, ind, len_interval).display_window()
-        tk.Label(self.frame, text=f'{self.dict_param}').grid(row=self.config_rows, column=1, columnspan=5)
+        if len(self.dict_param) > 1:
+            tk.Label(self.frame, text=f'{self.dict_param}').grid(row=self.config_rows, column=1, columnspan=5)
         # print('Only??', self.dict_param)
-        self.config_param['anomaly_params'].append(self.dict_param)
-        return 0
+            self.config_param['anomaly_params'].append(self.dict_param)
+            return 1
+        else:
+            return 0
     
     def inject_anomaly(self):
         self.master.destroy()
@@ -392,6 +399,7 @@ class DriftConfig(tk.Frame):
 
     def display_window(self):
         self.master.wait_window()
+        print('In Drift', self.config_param)
         return self.config_param
 
 class Demo(tk.Frame):
@@ -400,14 +408,16 @@ class Demo(tk.Frame):
         self.master = master
         self.frame = tk.Frame(self.master)
 
-        self.large_font = tFont.Font(family='Arial', size=30)
-        self.medium_font = tFont.Font(family='Arial', size=20)
-        self.font = tFont.Font(family='Arial', size=15)
+        self.large_font = tFont.Font(family='Courier New bold', size=35)
+        self.btn_font = tFont.Font(size=16)
+        self.font = tFont.Font(family='Courier New bold', size=16)
 
         label = tk.Label(self.frame, text='CanGene', font=self.large_font)
-        label.pack()
+        label.grid(row=0, column=0, ipadx=20, ipady=20)
+        # label.pack()
 
         self.moa_path = '../../moa-release-2023.04.0/lib'
+        # self.moa_path = None
         self.drift_dir = '/data/synthetic'
         self.sub_dir = 'demo'
         self.source_dir ='./data/benchmark/weather'
@@ -416,20 +426,32 @@ class Demo(tk.Frame):
         ##########################################################
         # Frame
         self.Menu = tk.Frame(self.frame)
-        # Menu.grid(row=0, column=0)
-        self.Menu.pack(side='top', fill='both', expand=False, padx=5, pady=5)
+        self.Menu.grid(row=1, column=0)
+        # self.Menu.pack(side='top', fill='both', expand=False, padx=5, pady=5)
 
-        self.Graph = tk.Frame(self.frame)
-        self.Graph.pack(side='top', fill='both', expand=True, padx=5, pady=5)
+        self.Graph = tk.Frame(self.frame)        
+        self.Graph.grid(row=2, column=0, sticky='nsew')
+        # self.Graph.pack(side='top', fill='both', expand=True, padx=5, pady=5)
 
-        # self.canvas = tk.Canvas(self.Menu)
-        # self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-# 
-# 
-        # self.scrollbar= ttk.Scrollbar(self.frame, orient=tk.VERTICAL, command=self.canvas.yview)
-        # self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-# 
-        # self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        self.canvas = tk.Canvas(self.Graph, width=1000, height=700)
+        self.scrollbar= ttk.Scrollbar(self.Graph, orient=tk.VERTICAL, command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.content_frame = ttk.Frame(self.canvas)
+        self.content_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox('all')))
+
+        self.frame.columnconfigure(0, weight=1)
+        self.frame.rowconfigure(0, weight=1)
+        self.content_frame.columnconfigure(0, weight=1)
+        self.content_frame.rowconfigure(0, weight=1)
+
+        self.canvas.create_window((0,0), window=self.content_frame, anchor='nw')
+        self.canvas.grid(row=2, column=0, sticky='nsew')
+        self.scrollbar.grid(row=2, column=1, sticky='ns')
+        # self.canvas.pack(side='left', fill='both', expand='True')
+        # self.scrollbar.pack(side='left', fill='both', expand='True')
+
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
 # 
         # self.canvas.bind(
             # "<Configure>",
@@ -443,22 +465,22 @@ class Demo(tk.Frame):
         ##########################################################
         # Menu Frame
         self.load_btn = tk.Button(self.Menu, text='Load Data', width=18, command=self.load_ts)
-        self.load_btn.grid(row=0, column=0)
+        self.load_btn.grid(row=0, column=0, ipadx=2, ipady=2)
 
         # self.show_btn = tk.Button(self.Menu, text='Show All', width=18, state='disable', command=lambda: self.show_ts(0))
         # self.show_btn.grid(row=0, column=1)
 
         self.yaml_btn = tk.Button(self.Menu, text='Load YAML', width=18, state='normal', command=self.load_yaml)
-        self.yaml_btn.grid(row=0, column=1)
+        self.yaml_btn.grid(row=0, column=1, ipadx=2, ipady=2)
 
         self.anomaly_btn = tk.Button(self.Menu, text='Anomaly Injection', width=18, state='disable', command=self.anomaly_injection)
-        self.anomaly_btn.grid(row=0, column=2)
+        self.anomaly_btn.grid(row=0, column=2, ipadx=2, ipady=2)
 
-        self.drift_btn = tk.Button(self.Menu, text='Drift Generation', width=18, state='disable', command=self.drift_generation)
-        self.drift_btn.grid(row=0, column=3)        
+        self.drift_btn = tk.Button(self.Menu,  text='Drift Generation', width=18, state='disable', command=self.drift_generation)
+        self.drift_btn.grid(row=0, column=3, ipadx=2, ipady=2)        
 
-        self.clear_btn = tk.Button(self.Menu, text='Clear All', width=18, state='normal', command=self.clear_all)
-        self.clear_btn.grid(row=0, column=4)        
+        self.clear_btn = tk.Button(self.Menu,  text='Clear All', width=18, state='normal', command=self.clear_all)
+        self.clear_btn.grid(row=0, column=4, ipadx=2, ipady=2)        
 
         # info = tk.StringVar()
         # msg_lbl = tk.Label(Menu, textvariable=info, font=font, width=125, height=2 ,foreground='black', background='#CACACA')
@@ -466,9 +488,11 @@ class Demo(tk.Frame):
 
         self.file_txt = tk.StringVar()
         file_lbl = tk.Label(self.Menu, textvariable=self.file_txt, font=self.font)
-        file_lbl.grid(row=2, columnspan=5)
+        file_lbl.grid(row=2, columnspan=5, ipadx=2, ipady=2)
 
+        self.master.protocol('WM_DELETE_WINDOW', self.exit_window)
 
+        self.config_param = {}
         ##########################################################
         ## Stream
         self.DataStreams = []
@@ -476,6 +500,12 @@ class Demo(tk.Frame):
         self.AnomalyStreams = []
         self.show_lbls = []
         self.frame.pack()
+
+    def exit_window(self):
+        self.master.destroy()
+
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(int(-1*(event.delta / 12)), 'units')
 
     def load_ts(self):
         """
@@ -563,8 +593,8 @@ class Demo(tk.Frame):
         
         if self.index_stream > len(self.show_lbls):
             for i in range(self.index_stream-len(self.show_lbls)):
-                self.show_lbls.append(tk.Label(self.Graph))            
-                self.show_lbls[-1].grid(row=len(self.show_lbls)-1, columnspan=4)
+                self.show_lbls.append(tk.Label(self.content_frame))            
+                self.show_lbls[-1].grid(row=len(self.show_lbls)-1)
                 # print(f'Len={len(self.show_lbls)}')
 
         for i in range(self.index_stream):
@@ -575,7 +605,7 @@ class Demo(tk.Frame):
 
         if sel>1:
             show_img = tk.PhotoImage(file='drift.png', master=self.master)
-            self.show_lbls.append(tk.Label(self.Graph))
+            self.show_lbls.append(tk.Label(self.content_frame))
             self.show_lbls[-1].grid(row=len(self.show_lbls)-1, columnspan=4)
             self.show_lbls[-1].configure(image=show_img)
             self.show_lbls[-1].image = show_img
@@ -584,7 +614,10 @@ class Demo(tk.Frame):
         """
         Call a new window to get anomaly injection configuration
         """
-        self.config_param = IntervalConfig(self).display_window()
+        try:
+            self.config_param.update(IntervalConfig(self).display_window())
+        except:
+            return 0
 
         self.anomaly_path = os.path.dirname(self.source_dir)
 
@@ -603,7 +636,8 @@ class Demo(tk.Frame):
         """
         Call a new window to get drift configuration
         """
-        self.config_param = DriftConfig(self).display_window()
+        self.config_param.update(DriftConfig(self).display_window())
+        
 
         if self.moa_path == None:
             self.moa_path = filedialog.askdirectory(parent=self.master, initialdir=f'{os.getcwd()}', title='Select a path of MOA program')
@@ -650,18 +684,22 @@ class Demo(tk.Frame):
             initialdir=f'{os.getcwd()}',
             filetypes=(('yaml files', '*.yaml'),)
         )
-        with open(f.name) as fy:
-            self.config_param = yaml.load(fy, Loader=yaml.FullLoader)
+
+        with open(f.name) as ft:
+            self.config_param = yaml.load(ft, Loader=yaml.FullLoader)
+
+        keys = self.config_param.keys()
 
         ## Load Files
-        selected_files = self.config_param['source_files']
-        dir = self.config_param['source_dir']
-        self.DataStreams = []
-        for i, file in enumerate(selected_files):
-            self.DataStreams.append(Stream(f"{dir}/{file}"))
-            self.DataStreams[i].plot()            
-            plt.savefig(f'stream_{i}.png', dpi=100)
-            self.index_stream +=1
+        if 'source_files' in keys and 'source_dir' in keys:
+            selected_files = self.config_param['source_files']
+            dir = self.config_param['source_dir']
+            self.DataStreams = []
+            for i, file in enumerate(selected_files):
+                self.DataStreams.append(Stream(f"{dir}/{file}"))
+                self.DataStreams[i].plot()            
+                plt.savefig(f'stream_{i}.png', dpi=100)
+                self.index_stream +=1
 
         txt_msg = 'Loaded Files:'
         for st in self.DataStreams:
@@ -669,14 +707,16 @@ class Demo(tk.Frame):
 
         self.file_txt.set(txt_msg)    
         
-        for i, dataStream in enumerate(self.DataStreams):
-            self.AnomalyStreams.append(createAnomalyIntervals(dataStream))
-            self.AnomalyStreams[i] = add_anomalies(self.AnomalyStreams[i], self.config_param)
-            dataStream.filename = f"{dataStream.filename}_anomaly"
-            dataStream.to_arff(self.config_param['source_dir'])
-            dataStream.plot()
-            plt.savefig(f'stream_{i}_a.png', dpi=100)
-        # show_config()
+        ## To inject anomalies, `anomaly_step` and corresponding `anomaly_params' are necessary
+        if self.config_param['anomaly_step']:
+            for i, dataStream in enumerate(self.DataStreams):
+                self.AnomalyStreams.append(createAnomalyIntervals(dataStream))
+                self.AnomalyStreams[i] = add_anomalies(self.AnomalyStreams[i], self.config_param)
+                dataStream.filename = f"{dataStream.filename}_anomaly"
+                dataStream.to_arff(self.config_param['source_dir'])
+                dataStream.plot()
+                plt.savefig(f'stream_{i}_a.png', dpi=100)
+            # show_config()
 
         moa_path = self.config_param['moa_path']
         source_streams = self.DataStreams
