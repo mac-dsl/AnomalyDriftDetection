@@ -43,7 +43,9 @@ We include several demo. file to test the experiments.
 - Details would be described both in the paper and jupyter notebook.
   
 2. anomaly_injection_demo.ipynb
-- 
+- This notebook demonstrates applying CanGene for applying synthetic user-customized anomalies to a sample dataset.
+- There are various parameters defined that allow the customization of user-defined anomalies, such as the type (point, collective, sequential) as well as their distrbutions and potential value ranges.
+- Parameters are defined in demo_config.yaml
 
 3.  ECG_drift_demo.ipynb
 - This Notebook demonstrates applying CanGene for generating a sample data stream with concept drift between ECG signals of varying frequencies to imitate different heart rates.
