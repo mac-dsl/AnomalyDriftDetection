@@ -419,11 +419,22 @@ class Demo(tk.Frame):
         label.grid(row=0, column=0, ipadx=20, ipady=20)
         # label.pack()
 
-        self.moa_path = '../../moa-release-2023.04.0/lib'
-        # self.moa_path = None
-        self.drift_dir = '/data/synthetic'
+        f = filedialog.askopenfile(
+            initialdir=f'{os.getcwd()}',            
+            filetypes=(('yaml files', '*.yaml'),)
+        )
+
+        with open(f.name) as f_folder:
+            folders = yaml.load(f_folder, Loader=yaml.FullLoader)
+
+        
+        # self.moa_path = '../moa-release-2023.04.0/lib'
+        self.moa_path = folders['moa_path']
+        self.base_dir = folders['base_dir']
+
+        self.drift_dir = f'{self.base_dir}/data/synthetic'
         self.sub_dir = 'demo'
-        self.source_dir ='./data/benchmark/weather'
+        self.source_dir =f'{self.base_dir}/data/benchmark/weather'
         self.anomaly_path = None
 
         ##########################################################
@@ -516,7 +527,8 @@ class Demo(tk.Frame):
         """
         
         f = filedialog.askopenfile(
-            initialdir=f'{os.getcwd()}/data/benchmark',
+            # initialdir=f'{os.getcwd()}/data/benchmark',
+            initialdir= f'{self.base_dir}/data/benchmark',
             filetypes=(('arff files', '*.arff'), ('csv files', '*.csv'))
         )
         self.source_dir = f.name
@@ -524,7 +536,7 @@ class Demo(tk.Frame):
 
         ## Draw graph and save temporal img
         self.DataStreams[self.index_stream].plot()
-        plt.savefig(f'stream_{self.index_stream}.png', dpi=100)
+        plt.savefig(f'{self.base_dir}/figs/stream_{self.index_stream}.png', dpi=100)
 
         txt_msg = 'Loaded Files:'
         for st in self.DataStreams:
@@ -560,7 +572,7 @@ class Demo(tk.Frame):
         nw.geometry('1050x430')
 
         # graph_img = tk.PhotoImage(file=f'stream_{index_stream}.png', master=nw)
-        self.graph_img = tk.PhotoImage(file='drift.png', master=nw)
+        self.graph_img = tk.PhotoImage(file=f'{self.base_dir}/figs/drift.png', master=nw)
         self.btn = tk.Button(nw, image=self.graph_img, command=self.close_win)
         self.btn.grid(row=0, columnspan=8)
 
@@ -582,9 +594,9 @@ class Demo(tk.Frame):
 
     def zoom_draw(self):
         self.ds.plot_drift(int(self.st_en.get()), int(self.end_en.get()))
-        plt.savefig('zoom.png', dpi=100)
+        plt.savefig(f'{self.base_dir}/figs/zoom.png', dpi=100)
 
-        self.graph_img = tk.PhotoImage(file='zoom.png', master=nw)
+        self.graph_img = tk.PhotoImage(file=f'{self.base_dir}/figs/zoom.png', master=nw)
         self.btn=tk.Button(nw, image=self.graph_img, command=self.close_win)
         self.btn.grid(row=0, columnspan=8)
 
@@ -601,13 +613,13 @@ class Demo(tk.Frame):
                 # print(f'Len={len(self.show_lbls)}')
 
         for i in range(self.index_stream):
-            if sel ==0: show_img = tk.PhotoImage(file=f'stream_{i}.png', master=self.master)
-            elif sel >=1: show_img = tk.PhotoImage(file=f'stream_{i}_a.png', master=self.master)
+            if sel ==0: show_img = tk.PhotoImage(file=f'{self.base_dir}/figs/stream_{i}.png', master=self.master)
+            elif sel >=1: show_img = tk.PhotoImage(file=f'{self.base_dir}/figs/stream_{i}_a.png', master=self.master)
             self.show_lbls[i].configure(image=show_img)
             self.show_lbls[i].image = show_img
 
         if sel>1:
-            show_img = tk.PhotoImage(file='drift.png', master=self.master)
+            show_img = tk.PhotoImage(file=f'{self.base_dir}/figs/drift.png', master=self.master)
             self.show_lbls.append(tk.Label(self.content_frame))
             self.show_lbls[-1].grid(row=len(self.show_lbls)-1, columnspan=4)
             self.show_lbls[-1].configure(image=show_img)
@@ -631,7 +643,7 @@ class Demo(tk.Frame):
             dataStream.filename = f"{dataStream.filename}_anomaly"
             dataStream.to_arff(self.anomaly_path)
             dataStream.plot()
-            plt.savefig(f'stream_{i}_a.png', dpi=100)
+            plt.savefig(f'{self.base_dir}/figs/stream_{i}_a.png', dpi=100)
 
         self.show_ts(1)
 
@@ -643,10 +655,12 @@ class Demo(tk.Frame):
         
 
         if self.moa_path == None:
-            self.moa_path = filedialog.askdirectory(parent=self.master, initialdir=f'{os.getcwd()}', title='Select a path of MOA program')
+            # self.moa_path = filedialog.askdirectory(parent=self.master, initialdir=f'../{os.getcwd()}', title='Select a path of MOA program')
+            self.moa_path = filedialog.askdirectory(parent=self.master, initialdir=f'../{self.base_dir}', title='Select a path of MOA program')
 
         source_stream = self.DataStreams
-        dir_path = filedialog.askdirectory(parent=self.master, initialdir=f'{os.getcwd()}{self.drift_dir}', title='Please select a directory')
+        # dir_path = filedialog.askdirectory(parent=self.master, initialdir=f'{os.getcwd()}{self.drift_dir}', title='Please select a directory')
+        dir_path = filedialog.askdirectory(parent=self.master, initialdir=f'{self.drift_dir}', title='Please select a directory')
 
         self.drift_dir = os.path.dirname(dir_path)
         self.config_param['drift_params']['sub_dir'] = dir_path[len(self.drift_dir)+1:]
@@ -673,7 +687,7 @@ class Demo(tk.Frame):
         )
 
         self.ds.plot_drift()
-        plt.savefig('drift.png', dpi=100)
+        plt.savefig(f'{self.base_dir}/figs/drift.png', dpi=100)
 
         self.show_ts(2)
         self.popup_win()
@@ -684,7 +698,8 @@ class Demo(tk.Frame):
         """
         
         f = filedialog.askopenfile(
-            initialdir=f'{os.getcwd()}',
+            # initialdir=f'{os.getcwd()}',
+            initialdir=self.base_dir,
             filetypes=(('yaml files', '*.yaml'),)
         )
 
@@ -696,12 +711,13 @@ class Demo(tk.Frame):
         ## Load Files
         if 'source_files' in keys and 'source_dir' in keys:
             selected_files = self.config_param['source_files']
-            dir = self.config_param['source_dir']
+            # dir = self.config_param['source_dir']
+            dir = self.base_dir + self.config_param['source_dir']
             self.DataStreams = []
             for i, file in enumerate(selected_files):
                 self.DataStreams.append(Stream(f"{dir}/{file}"))
                 self.DataStreams[i].plot()            
-                plt.savefig(f'stream_{i}.png', dpi=100)
+                plt.savefig(f'{self.base_dir}/figs/stream_{i}.png', dpi=100)
                 self.index_stream +=1
 
         txt_msg = 'Loaded Files:'
@@ -716,15 +732,18 @@ class Demo(tk.Frame):
                 self.AnomalyStreams.append(createAnomalyIntervals(dataStream))
                 self.AnomalyStreams[i] = add_anomalies(self.AnomalyStreams[i], self.config_param)
                 dataStream.filename = f"{dataStream.filename}_anomaly"
-                dataStream.to_arff(self.config_param['source_dir'])
+                # dataStream.to_arff(self.config_param['source_dir'])
+                dataStream.to_arff(self.base_dir + self.config_param['source_dir']) 
                 dataStream.plot()
-                plt.savefig(f'stream_{i}_a.png', dpi=100)
+                plt.savefig(f'{self.base_dir}/figs/stream_{i}_a.png', dpi=100)
             # show_config()
 
-        moa_path = self.config_param['moa_path']
+        if self.moa_path == None:
+            self.moa_path = self.config_param['moa_path']
         source_streams = self.DataStreams
-        drift_dir = os.getcwd()+ self.config_param['drift_dir']
-        g = DriftGenerator(dir, drift_dir, moa_path, selected_streams=source_streams)
+        # drift_dir = os.getcwd()+ self.config_param['drift_dir']
+        drift_dir = self.base_dir + self.config_param['drift_dir']
+        g = DriftGenerator(dir, drift_dir, self.moa_path, selected_streams=source_streams)
 
         length = self.DataStreams[0].length
         dataset = 'Data'
@@ -737,7 +756,7 @@ class Demo(tk.Frame):
         )
 
         self.ds.plot_drift()
-        plt.savefig('drift.png', dpi=100)
+        plt.savefig(f'{self.base_dir}/figs/drift.png', dpi=100)
 
         self.show_ts(2)
         self.popup_win()
